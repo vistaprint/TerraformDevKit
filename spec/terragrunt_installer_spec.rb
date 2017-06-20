@@ -22,7 +22,7 @@ RSpec.describe TerraformDevKit::TerragruntInstaller do
       before(:example) do
         allow(TerraformDevKit::Command)
           .to receive(:run)
-          .and_return("terragrunt version v0.12.20\r\n")
+          .and_return(['terragrunt version v0.12.20'])
       end
 
       it 'returns the version' do
@@ -53,7 +53,7 @@ RSpec.describe TerraformDevKit::TerragruntInstaller do
           .to receive(:run)
           .and_call_original
 
-        result = TerraformDevKit::Command.run('./terragrunt --version')
+        result = TerraformDevKit::Command.run('./terragrunt --version')[0]
         match = /terragrunt version v(\d+\.\d+\.\d+)/.match(result)
         version = match[1] unless match.nil?
 

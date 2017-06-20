@@ -10,7 +10,7 @@ INTERVAL_LENGTH = 5.0
 MAX_TIME_TO_RETRY = 300.0
 
 if ARGV.length != 1
-  puts 'USAGE: wait_for_url.rb <url>'
+  puts 'USAGE: wait_for_url <url>'
   exit
 end
 

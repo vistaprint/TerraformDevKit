@@ -10,7 +10,7 @@ module TerraformDevKit
     LOCAL_FILE_NAME = "terragrunt#{EXTENSION}".freeze
 
     def self.installed_terragrunt_version
-      version = Command.run('terragrunt --version').tr("\r\n", '')
+      version = Command.run('terragrunt --version')[0]
       match = /terragrunt version v(\d+\.\d+\.\d+)/.match(version)
       match[1] unless match.nil?
     rescue

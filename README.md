@@ -8,7 +8,7 @@ The script collection incldues support for:
 
 * Managing AWS credentials
 * Simple reading and writing to AWS DynamoDB
-* Polling until an AWS ApiGateway resource becomes ready
+* Polling an AWS ApiGateway endpoint until it becomes ready
 * Executing commands
 * Locally installing Terraform and [Terragrunt](https://github.com/gruntwork-io/terragrunt)
 * Backing up the state from a failed Terraform execution

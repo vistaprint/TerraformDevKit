@@ -9,7 +9,7 @@ module TerraformDevKit
     LOCAL_FILE_NAME = 'terraform.zip'.freeze
 
     def self.installed_terraform_version
-      version = Command.run('terraform --version').tr("\r\n", '')
+      version = Command.run('terraform --version')[0]
       match = /Terraform v(\d+\.\d+\.\d+)/.match(version)
       match[1] unless match.nil?
     rescue
