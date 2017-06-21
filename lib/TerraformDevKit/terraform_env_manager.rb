@@ -15,14 +15,13 @@ module TerraformDevKit
     def self.delete(env)
       if exist?(env)
         select('default')
-        if TerraformDevKit::OS.host_os == 'windows'
-          # TODO: Get rid of this hack once the following issue gets fixed:
-          # https://github.com/hashicorp/terraform/issues/15343
-          puts 'WARNING: Deleting an environment does not work on Windows'
-        else
-          Command.run("terraform env delete #{env}")
-        end
+        Command.run("terraform env delete #{env}")
       end
+    rescue RuntimeError => error
+      # TODO: Get rid of this hack once the following issue gets fixed:
+      # https://github.com/hashicorp/terraform/issues/15343
+      puts "Error deleting terraform environment: #{error}" \
+        'NOTE: Deleting an environment does not currently work on Windows'
     end
 
     def self.select(env)
