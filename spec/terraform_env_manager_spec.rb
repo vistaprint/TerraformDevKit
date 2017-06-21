@@ -56,11 +56,17 @@ RSpec.describe TerraformEnvManager do
 
   describe '#delete' do
     it 'deletes an environment' do
-      TerraformEnvManager.create(AN_ENVIRONMENT)
-      expect(TerraformEnvManager.exist?(AN_ENVIRONMENT)).to be true
+      if TerraformDevKit::OS.host_os == 'windows'
+        # TODO: Get rid of this hack once the following issue gets fixed:
+        # https://github.com/hashicorp/terraform/issues/15343
+        puts 'Skipping #delete test as it is not supported in Windows'
+      else
+        TerraformEnvManager.create(AN_ENVIRONMENT)
+        expect(TerraformEnvManager.exist?(AN_ENVIRONMENT)).to be true
 
-      TerraformEnvManager.delete(AN_ENVIRONMENT)
-      expect(TerraformEnvManager.exist?(AN_ENVIRONMENT)).to be false
+        TerraformEnvManager.delete(AN_ENVIRONMENT)
+        expect(TerraformEnvManager.exist?(AN_ENVIRONMENT)).to be false
+      end
     end
   end
 
