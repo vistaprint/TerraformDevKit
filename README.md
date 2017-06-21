@@ -14,6 +14,7 @@ The script collection incldues support for:
 * Backing up the state from a failed Terraform execution
 * Multiplatform tools
 * Simple configuration management
+* Terraform environment management
 
 Most of these scripts exist to provide support to a module development and testing environment for Terraform: [TerraformModules](https://github.com/betabandido/TerraformModules). But, they might be useful for other purposes too.
 
