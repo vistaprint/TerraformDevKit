@@ -20,7 +20,7 @@ module TerraformDevKit
     rescue RuntimeError => error
       # TODO: Get rid of this hack once the following issue gets fixed:
       # https://github.com/hashicorp/terraform/issues/15343
-      puts "Error deleting terraform environment: #{error}" \
+      puts "Error deleting terraform environment: #{error}\n" \
         'NOTE: Deleting an environment does not currently work on Windows'
     end
 
