@@ -47,13 +47,16 @@ RSpec.describe TerraformDevKit::TerraformInstaller do
 
     it 'returns nil' do
       Dir.chdir(@tmpdir) do
-        TerraformDevKit::TerraformInstaller.install_local('0.9.8')
+        TerraformDevKit::TerraformInstaller.install_local(
+          '0.9.8',
+          directory: 'bin'
+        )
 
         allow(TerraformDevKit::Command)
           .to receive(:run)
           .and_call_original
 
-        result = TerraformDevKit::Command.run('./terraform --version')[0]
+        result = TerraformDevKit::Command.run('./bin/terraform --version')[0]
         match = /Terraform v(\d+\.\d+\.\d+)/.match(result)
         version = match[1] unless match.nil?
 

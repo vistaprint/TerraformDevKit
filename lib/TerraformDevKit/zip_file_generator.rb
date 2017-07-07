@@ -3,7 +3,6 @@ require 'zip'
 module TerraformDevKit
   class ZipFileGenerator
     def initialize(input_dir, output_file)
-      puts "REAL ONE"
       @input_dir = input_dir
       @output_file = output_file
     end

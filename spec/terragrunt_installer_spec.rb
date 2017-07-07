@@ -47,13 +47,16 @@ RSpec.describe TerraformDevKit::TerragruntInstaller do
 
     it 'returns nil' do
       Dir.chdir(@tmpdir) do
-        TerraformDevKit::TerragruntInstaller.install_local('0.12.20')
+        TerraformDevKit::TerragruntInstaller.install_local(
+          '0.12.20',
+          directory: 'bin'
+        )
 
         allow(TerraformDevKit::Command)
           .to receive(:run)
           .and_call_original
 
-        result = TerraformDevKit::Command.run('./terragrunt --version')[0]
+        result = TerraformDevKit::Command.run('./bin/terragrunt --version')[0]
         match = /terragrunt version v(\d+\.\d+\.\d+)/.match(result)
         version = match[1] unless match.nil?
 

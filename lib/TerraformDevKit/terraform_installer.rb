@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'zip'
 
 require_relative 'download'
@@ -16,6 +17,20 @@ module TerraformDevKit
       nil
     end
 
+    def self.install_local(version, directory: Dir.pwd)
+      if installed_terraform_version == version
+        puts 'Terraform already installed'
+        return
+      end
+
+      FileUtils.mkdir_p(directory)
+      Dir.chdir(directory) do
+        download_terraform(version)
+        unzip_terraform
+      end
+    end
+
+    private_class_method
     def self.download_terraform(version)
       TerraformDevKit.download_file(
         "https://releases.hashicorp.com/terraform/#{version}/terraform_#{version}_#{OS.host_os}_amd64.zip",
@@ -24,6 +39,7 @@ module TerraformDevKit
       )
     end
 
+    private_class_method
     def self.unzip_terraform
       Zip::File.open(LOCAL_FILE_NAME) do |zip_file|
         zip_file.each do |entry|
@@ -32,16 +48,6 @@ module TerraformDevKit
           entry.extract { true }
         end
       end
-    end
-
-    def self.install_local(version)
-      if installed_terraform_version == version
-        puts 'Terraform already installed'
-        return
-      end
-
-      download_terraform(version)
-      unzip_terraform
     end
   end
 end
