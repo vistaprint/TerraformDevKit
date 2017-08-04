@@ -7,7 +7,6 @@ RSpec.describe TerraformDevKit::Command do
     expect(result).to eq(%w[Line1 Line2])
   end
 
-
   it 'throws an exception if command fails' do
     if TerraformDevKit::OS.host_os == 'windows'
       expect { TerraformDevKit::Command.run('cmd /c exit 1') }
