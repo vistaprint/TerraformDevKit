@@ -1,32 +1,17 @@
 #!/usr/bin/env ruby
 
-require 'open-uri'
-require 'openssl'
+require 'TerraformDevKit'
 
-# Interval between retries (in seconds)
-INTERVAL_LENGTH = 5.0
+TDK = TerraformDevKit
 
-# Maximum amount of time to keep retrying (in seconds)
-MAX_TIME_TO_RETRY = 300.0
-
-if ARGV.length != 1
-  puts 'USAGE: wait_for_url <url>'
+if ARGV.length != 2
+  puts 'USAGE: wait_for_url <url> <retries>'
   exit
 end
 
 url = ARGV[0]
-retries = (MAX_TIME_TO_RETRY / INTERVAL_LENGTH).ceil
+retries = ARGV[1].to_i
 
-begin
-  puts "Fetching #{url}"
-  open(url, ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE, redirect: false)
-rescue OpenURI::HTTPError => error
-  response = error.io
-  puts "Response status code: #{response.status[0]}"
-  unless (retries -= 1).zero? || response.status[0] != '500'
-    sleep(INTERVAL_LENGTH)
-    retry
-  end
-rescue OpenURI::HTTPRedirect => error
-  puts "Redirect to: #{error.uri}"
+TDK.with_retry(retries) do
+  TDK::Request.new(url).execute(raise_on_codes: ['500'])
 end
