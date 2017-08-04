@@ -21,7 +21,6 @@ module TerraformDevKit
         thread.join
         stdout_thread.join
         input_thread.terminate unless close_stdin
-        
         raise "Error running command #{cmd}" unless thread.value.success?
       end
 
