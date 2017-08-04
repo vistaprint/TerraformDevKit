@@ -1,4 +1,5 @@
 require 'TerraformDevKit/command'
+require 'TerraformDevKit/os'
 
 RSpec.describe TerraformDevKit::Command do
   it 'returns command output' do
@@ -6,8 +7,14 @@ RSpec.describe TerraformDevKit::Command do
     expect(result).to eq(%w[Line1 Line2])
   end
 
+
   it 'throws an exception if command fails' do
-    expect { TerraformDevKit::Command.run('sh -c "exit 1"') }
-      .to raise_error('Error running command sh -c "exit 1"')
+    if TerraformDevKit::OS.host_os == 'windows'
+      expect { TerraformDevKit::Command.run('cmd /c exit 1') }
+        .to raise_error('Error running command cmd /c exit 1')
+    else
+      expect { TerraformDevKit::Command.run('sh -c "exit 1"') }
+        .to raise_error('Error running command sh -c "exit 1"')
+    end
   end
 end
