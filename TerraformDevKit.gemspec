@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['vjimenez@vistaprint.com']
 
   spec.summary       = 'Set of scripts to ease development and testing with Terraform.'
-  spec.homepage      = 'https://github.com/betabandido/TerraformDevKit'
+  spec.homepage      = 'https://github.com/vistaprint/TerraformDevKit'
   spec.license       = 'Apache-2.0'
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|

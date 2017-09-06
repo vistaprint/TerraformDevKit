@@ -4,19 +4,21 @@
 
 Set of scripts to ease development and testing with [Terraform](https://www.terraform.io/).
 
-The script collection incldues support for:
+The script collection includes support for:
 
 * Managing AWS credentials
-* Simple reading and writing to AWS DynamoDB
-* Polling an AWS ApiGateway endpoint until it becomes ready
-* Executing commands
-* Locally installing Terraform and [Terragrunt](https://github.com/gruntwork-io/terragrunt)
 * Backing up the state from a failed Terraform execution
-* Multiplatform tools
+* Executing external commands
 * Simple configuration management
+* Simple reading and writing to AWS DynamoDB
+* Multiplatform tools
+* Making simple HTTP requests
+* Retrying a block of code
 * Terraform environment management
+* Locally installing Terraform and [Terragrunt](https://github.com/gruntwork-io/terragrunt)
+* Filtering Terraform logging messages
 
-Most of these scripts exist to provide support to a module development and testing environment for Terraform: [TerraformModules](https://github.com/betabandido/TerraformModules). But, they might be useful for other purposes too.
+Most of these scripts exist to provide support to a module development and testing environment for Terraform: [TerraformModules](https://github.com/vistaprint/TerraformModules). But, they might be useful for other purposes too.
 
 ## Installation
 
@@ -50,8 +52,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/betabandido/TerraformDevKit.
-
+Bug reports and pull requests are welcome on GitHub at https://github.com/vistaprint/TerraformDevKit.
 
 ## License
 
