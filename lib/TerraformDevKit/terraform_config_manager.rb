@@ -19,7 +19,7 @@ module TerraformDevKit
 
     private_class_method
     def self.fix_configuration(env)
-      if env.running_on_jenkins?
+      if Environment.running_on_jenkins?
         Configuration.get('aws').delete('profile')
       elsif Configuration.get('aws').key?('profile')
         unless env.local_backend?
