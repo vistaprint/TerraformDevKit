@@ -27,5 +27,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'webmock', '~> 3.0.1'
 
   spec.add_runtime_dependency 'aws-sdk', '~> 2.9.37'
+  spec.add_runtime_dependency 'mustache', '~> 1.0.2'
   spec.add_runtime_dependency 'rubyzip', '~> 1.2.1'
 end
