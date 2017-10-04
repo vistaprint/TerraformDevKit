@@ -4,7 +4,6 @@ require 'TerraformDevKit'
 TDK = TerraformDevKit
 
 raise 'ROOT_PATH is not defined' if defined?(ROOT_PATH).nil?
-
 BIN_PATH = File.join(ROOT_PATH, 'bin')
 
 # Ensure terraform and terragrunt are in the PATH
@@ -12,6 +11,8 @@ ENV['PATH'] = TDK::OS.join_env_path(
   TDK::OS.convert_to_local_path(BIN_PATH),
   ENV['PATH']
 )
+
+TF_CONFIG_EXTRA_VARS = {}.freeze unless defined?(TF_CONFIG_EXTRA_VARS)
 
 def destroy_if_fails(env)
   yield
@@ -40,7 +41,7 @@ task :prepare, [:env] do |_, args|
     directory: BIN_PATH
   )
 
-  TDK::TerraformConfigManager.setup(env)
+  TDK::TerraformConfigManager.setup(env, extra_vars: TF_CONFIG_EXTRA_VARS)
 
   task('custom_prepare').invoke(args.env) if Rake::Task.task_defined?('custom_prepare')
 
