@@ -76,7 +76,7 @@ RSpec.describe TDK::TerraformConfigManager do
       # TODO: find a way to make Configuration not a singleton
       TDK::Configuration.init('config.yml')
       env = TDK::Environment.new('dev')
-      TDK::TerraformConfigManager.setup(env, Dummy: 'foobar')
+      TDK::TerraformConfigManager.setup(env, extra_vars: { Dummy: 'foobar' })
 
       expect(File.read('envs/dev/test.tf')).to eq(tf_output)
       expect(File.read('envs/dev/test.tfvars')).to eq(tfvars_output)

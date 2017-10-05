@@ -4,7 +4,7 @@ require 'fileutils'
 
 module TerraformDevKit
   class TerraformConfigManager
-    def self.setup(env, extra_vars)
+    def self.setup(env, extra_vars: {})
       fix_configuration(env)
       create_environment_directory(env)
       render_template_config_files(env, extra_vars)
@@ -19,6 +19,7 @@ module TerraformDevKit
 
     private_class_method
     def self.fix_configuration(env)
+      raise 'No AWS section in the config file' if Configuration.get('aws').nil?
       if Environment.running_on_jenkins?
         Configuration.get('aws').delete('profile')
       elsif Configuration.get('aws').key?('profile')
