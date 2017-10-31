@@ -1,6 +1,6 @@
 # TerraformDevKit
 
-[![Build Status](https://travis-ci.org/vistaprint/TerraformDevKit.svg?branch=master)](https://travis-ci.org/vistaprint/TerraformDevKit) [![Build status](https://ci.appveyor.com/api/projects/status/4vkyr196li83vju6/branch/master?svg=true)](https://ci.appveyor.com/project/betabandido/terraformdevkit/branch/master)
+[![Build Status](https://travis-ci.org/vistaprint/TerraformDevKit.svg?branch=master)](https://travis-ci.org/vistaprint/TerraformDevKit) [![Build status](https://ci.appveyor.com/api/projects/status/4vkyr196li83vju6/branch/master?svg=true)](https://ci.appveyor.com/project/vistaprint/terraformdevkit/branch/master)
 
 Set of scripts to ease development and testing with [Terraform](https://www.terraform.io/).
 
