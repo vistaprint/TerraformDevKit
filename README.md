@@ -54,6 +54,28 @@ Testing (`test`) and production (`prod`) environment use a remote backend. Thus,
 
 TerraformDevKit expects templated versions (using [Mustache](https://mustache.github.io/)) of the Terraform files. Such files might contain placeholders for several fields such as `Environment`, (AWS) `Region` or (AWS) `Profile`, among others. TerraformDevKit uses the template files to generate the final files that will be consumed by Terraform and Terragrunt. As an example, for the production environment, the resulting files are placed in a directory named `envs/prod`.
 
+### Configuration Files
+
+Configuration files must be placed in a directory named `config`. Each environment type requires a different configuration file. Thus, the following three files must be placed in the `config` directory:
+
+* `config-dev.yml`
+* `config-test.yml`
+* `config-prod.yml`
+
+The first one contains the configuration for **all** the development environments that are created. The other two contain the configuration for the test and production environments, respectively.
+
+A sample configuration files is shown next:
+
+```yaml
+terraform-version: 0.10.8
+terragrunt-version: 0.13.15
+aws:
+  profile: myprofile
+  region: eu-west-1
+```
+
+The AWS profile **must not** be specified for test and production accounts, as users are required to manually type the profile name.
+
 ### A Minimal Rakefile
 
 ```ruby
