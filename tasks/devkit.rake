@@ -12,8 +12,6 @@ ENV['PATH'] = TDK::OS.join_env_path(
   ENV['PATH']
 )
 
-TF_CONFIG_EXTRA_VARS = {}.freeze unless defined?(TF_CONFIG_EXTRA_VARS)
-
 def destroy_if_fails(env)
   yield
 rescue StandardError => e
@@ -41,17 +39,19 @@ task :prepare, [:env] do |_, args|
     directory: BIN_PATH
   )
 
-  TDK::TerraformConfigManager.setup(env, extra_vars: TF_CONFIG_EXTRA_VARS)
+  TDK::TerraformConfigManager.setup(env)
 
-  task('custom_prepare').invoke(args.env) if Rake::Task.task_defined?('custom_prepare')
+  if Rake::Task.task_defined?('custom_prepare')
+    task('custom_prepare').invoke(args.env)
+  end
 
   TDK::Command.run(
-    'terragrunt init',
+    'terragrunt init -upgrade=false',
     directory: env.working_dir,
     close_stdin: false
   )
 
-  cmd = 'terragrunt get'
+  cmd  = 'terragrunt get'
   cmd += ' -update=true' if TDK::TerraformConfigManager.update_modules?
   TDK::Command.run(cmd, directory: env.working_dir)
 end
@@ -73,12 +73,14 @@ end
 desc 'Tests a local environment'
 task :test, [:env] do |_, args|
   env = TDK::Environment.new(args.env)
-  raise 'Testing is only allowed for local environments' unless env.local_backend?
+  env.local_backend? || (raise 'Testing is only allowed for local environments')
 
   task('apply').invoke(env.name)
 
   destroy_if_fails(env) do
-    task('custom_test').invoke(args.env) if Rake::Task.task_defined?('custom_test')
+    if Rake::Task.task_defined?('custom_test')
+      task('custom_test').invoke(args.env)
+    end
   end
 end
 
@@ -96,6 +98,9 @@ task :destroy, [:env] => :prepare do |_, args|
   cmd = 'terragrunt destroy'
   cmd += ' -force' if env.local_backend?
   TDK::Command.run(cmd, directory: env.working_dir, close_stdin: false)
+  if Rake::Task.task_defined?('custom_destroy')
+    task('custom_destroy').invoke(args.env)
+  end
 end
 
 desc 'Cleans an environment (infrastructure is destroyed too)'
