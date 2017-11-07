@@ -68,7 +68,7 @@ A sample configuration files is shown next:
 
 ```yaml
 terraform-version: 0.10.8
-terragrunt-version: 0.13.15
+terragrunt-version: 0.13.5
 aws:
   profile: myprofile
   region: eu-west-1
@@ -145,6 +145,29 @@ terragrunt = {
   }
 }
 ```
+
+### Injecting Additional Variables into Template Files
+
+In addition to the default variables that are passed to Mustache when rendering
+a template file, users can provide additional variables. To do so, users must register a procedure that receives the environment as a parameter and returns
+a map with the extra variables and their values. An example is shown next:
+
+```ruby
+TDK::TerraformConfigManager.register_extra_vars_proc(
+  proc do
+    { SumoLogicEndpoint: TDK::Configuration.get('sumologic')['endpoint'] }
+  end
+)
+```
+
+### Skipping Module Updates
+
+For safety and correctness reasons, TerraformDevKit requests to update every
+module when it executes Terraform. This may take a while, depending on the
+number of modules used in the infrastructure.
+
+When users are sure that an update is not necessary, this step can be skipped
+by setting the environment variable `TF_DEVKIT_SKIP_MODULE_UPDATE` to `true`.
 
 ## Development
 
