@@ -4,14 +4,20 @@ require 'fileutils'
 
 module TerraformDevKit
   class TerraformConfigManager
-    def self.setup(env, extra_vars: {})
+    @extra_vars_proc = proc { {} }
+
+    def self.register_extra_vars_proc(p)
+      @extra_vars_proc = p
+    end
+
+    def self.setup(env)
       fix_configuration(env)
       create_environment_directory(env)
-      render_template_config_files(env, extra_vars)
+      render_template_config_files(env)
     end
 
     def self.update_modules?
-      skip_update = ENV.fetch('TF_DEV_KIT_SKIP_MODULE_UPDATE', 'false')
+      skip_update = ENV.fetch('TF_DEVKIT_SKIP_MODULE_UPDATE', 'false')
                        .strip
                        .downcase
       skip_update != 'true'
@@ -38,7 +44,7 @@ module TerraformDevKit
     end
 
     private_class_method
-    def self.render_template_config_files(env, extra_vars)
+    def self.render_template_config_files(env)
       aws_config = Configuration.get('aws')
       file_list = Dir['*.tf.mustache'] + Dir['*.tfvars.mustache']
       file_list.each do |fname|
@@ -46,7 +52,7 @@ module TerraformDevKit
           File.read(fname),
           env,
           aws_config,
-          extra_vars: extra_vars
+          extra_vars: @extra_vars_proc.call(env)
         )
         config_fname = File.basename(fname, File.extname(fname))
         Dir.chdir(env.working_dir) do
@@ -60,7 +66,7 @@ module TerraformDevKit
       puts "Environment #{env.name} requires manual input of AWS credentials"
       print 'Enter the profile to use: '
       profile = $stdin.gets.tr("\r\n", '')
-      raise 'Invalid profile name' unless /^\w+$/ =~ profile
+      /^\w+$/ =~ profile || (raise 'Invalid profile name')
       profile
     end
   end
