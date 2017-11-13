@@ -5,8 +5,7 @@ module TerraformDevKit
     attr_reader :name
 
     def initialize(name)
-      raise 'Environment must not be null' if name.nil?
-      raise "Invalid environment name: #{name}" unless /^[0-9a-zA-Z]+$/ =~ name
+      /^[0-9a-zA-Z]+$/ =~ name || (raise "Invalid environment name: #{name}")
       @name = name.downcase
     end
 
@@ -37,7 +36,8 @@ module TerraformDevKit
     def self.temp_name
       hostname = Socket.gethostname
       date = Time.now.strftime('%y%m%d%H%M')
-      "#{hostname}#{date}"
+      env = "#{hostname}#{date}"
+      env.gsub(/[^0-9a-zA-Z]/, '')
     end
 
     def self.running_on_jenkins?

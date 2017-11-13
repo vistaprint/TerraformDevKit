@@ -4,17 +4,7 @@ TDK = TerraformDevKit
 
 RSpec.describe TerraformDevKit::Environment do
   describe '#initialize' do
-    it 'raises an error if name is null' do
-      expect { TDK::Environment.new(nil) }
-        .to raise_error('Environment must not be null')
-    end
-
-    it 'raises an error if name is empty' do
-      expect { TDK::Environment.new('') }
-        .to raise_error('Invalid environment name: ')
-    end
-
-    ['foo#bar', 'foo-bar', 'foo_bar', 'foo+bar'].each do |name|
+    [nil, '', 'foo#bar', 'foo-bar', 'foo_bar', 'foo+bar', '#'].each do |name|
       it 'raises an error when name is not alphanumeric' do
         expect { TDK::Environment.new(name) }
           .to raise_error("Invalid environment name: #{name}")
@@ -60,6 +50,14 @@ RSpec.describe TerraformDevKit::Environment do
       time = Time.new(2017, 1, 2, 15, 30)
       allow(Time).to receive(:now).and_return(time)
       allow(Socket).to receive(:gethostname).and_return('foobar')
+      name = TDK::Environment.temp_name
+      expect(name).to eq('foobar1701021530')
+    end
+
+    it 'removes invalid characters' do
+      time = Time.new(2017, 1, 2, 15, 30)
+      allow(Time).to receive(:now).and_return(time)
+      allow(Socket).to receive(:gethostname).and_return('#foo-bar@')
       name = TDK::Environment.temp_name
       expect(name).to eq('foobar1701021530')
     end
