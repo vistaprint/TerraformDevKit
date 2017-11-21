@@ -68,6 +68,9 @@ task :apply, [:env] => :prepare do |_, args|
   destroy_if_fails(env) do
     TDK::Command.run('terragrunt apply', directory: env.working_dir)
   end
+  if Rake::Task.task_defined?('post_apply')
+    task('post_apply').invoke(args.env)
+  end
 end
 
 desc 'Tests a local environment'
