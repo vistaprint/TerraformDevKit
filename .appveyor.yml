@@ -1,7 +1,6 @@
 install:
   - set PATH=C:\Ruby21-x64\bin;%PATH%
   - bundle install
-  - gem install bundler -v 1.14.6
 
 build: off
 
