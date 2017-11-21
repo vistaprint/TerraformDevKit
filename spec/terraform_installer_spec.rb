@@ -3,38 +3,80 @@ require 'tmpdir'
 
 require 'TerraformDevKit/terraform_installer'
 
-RSpec.describe TerraformDevKit::TerraformInstaller do
+TDK = TerraformDevKit
+
+RSpec.describe TDK::TerraformInstaller do
   describe '#installed_terraform_version' do
     context 'terraform is not installed' do
       before(:example) do
-        allow(TerraformDevKit::Command)
+        allow(TDK::Command)
           .to receive(:run)
           .and_throw('Error running command')
       end
 
       it 'returns nil' do
-        version = TerraformDevKit::TerraformInstaller.installed_terraform_version
+        version = TDK::TerraformInstaller.installed_terraform_version
         expect(version).to be_nil
       end
     end
 
     context 'terraform is installed' do
       before(:example) do
-        allow(TerraformDevKit::Command)
+        allow(TDK::Command)
           .to receive(:run)
           .and_return(['Terraform v0.9.8'])
       end
 
       it 'returns the version' do
-        version = TerraformDevKit::TerraformInstaller.installed_terraform_version
+        version = TDK::TerraformInstaller.installed_terraform_version
         expect(version).to eq('0.9.8')
+      end
+    end
+  end
+
+  describe '#extract_version' do
+    context 'empty output' do
+      it 'returns nil' do
+        version = TDK::TerraformInstaller.extract_version([])
+        expect(version).to be_nil
+      end
+    end
+
+    context 'version is missing' do
+      it 'returns nil' do
+        version = TDK::TerraformInstaller.extract_version(%w[foo bar])
+        expect(version).to be_nil
+      end
+    end
+
+    context 'version is present' do
+      [
+        { output: ['Terraform v0.9.8'], version: '0.9.8' },
+        { output: ['foo', 'Terraform v0.9.8', 'bar'], version: '0.9.8' },
+        { output: ['Terraform v11.22.33'], version: '11.22.33' }
+      ].each do |example|
+        it 'returns the version' do
+          version = TDK::TerraformInstaller.extract_version(example[:output])
+          expect(version).to eq(example[:version])
+        end
+      end
+    end
+
+    context 'version is present more than once' do
+      it 'returns nil' do
+        output = [
+          'Terraform v0.9.8',
+          'Terraform v0.9.8'
+        ]
+        version = TDK::TerraformInstaller.extract_version(output)
+        expect(version).to be_nil
       end
     end
   end
 
   describe '#install_local' do
     before(:example) do
-      allow(TerraformDevKit::Command)
+      allow(TDK::Command)
         .to receive(:run)
         .and_throw('Error running command')
 
@@ -47,19 +89,17 @@ RSpec.describe TerraformDevKit::TerraformInstaller do
 
     it 'returns nil' do
       Dir.chdir(@tmpdir) do
-        TerraformDevKit::TerraformInstaller.install_local(
+        TDK::TerraformInstaller.install_local(
           '0.9.8',
           directory: 'bin'
         )
 
-        allow(TerraformDevKit::Command)
+        allow(TDK::Command)
           .to receive(:run)
           .and_call_original
 
-        result = TerraformDevKit::Command.run('./bin/terraform --version')[0]
-        match = /Terraform v(\d+\.\d+\.\d+)/.match(result)
-        version = match[1] unless match.nil?
-
+        output = TDK::Command.run('./bin/terraform --version')
+        version = TDK::TerraformInstaller.extract_version(output)
         expect(version).to eq('0.9.8')
       end
     end

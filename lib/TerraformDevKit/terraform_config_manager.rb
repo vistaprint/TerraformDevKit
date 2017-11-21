@@ -17,10 +17,8 @@ module TerraformDevKit
     end
 
     def self.update_modules?
-      skip_update = ENV.fetch('TF_DEVKIT_SKIP_MODULE_UPDATE', 'false')
-                       .strip
-                       .downcase
-      skip_update != 'true'
+      var = ENV.fetch('TF_DEVKIT_UPDATE_MODULES', 'false')
+      var.strip.casecmp('true').zero?
     end
 
     private_class_method

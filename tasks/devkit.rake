@@ -21,6 +21,12 @@ rescue StandardError => e
   raise
 end
 
+def invoke_if_defined(task_name, env)
+  if Rake::Task.task_defined?(task_name)
+    task(task_name).invoke(env)
+  end
+end
+
 desc 'Prepares the environment to create the infrastructure'
 task :prepare, [:env] do |_, args|
   puts "== Configuring environment #{args.env}"
@@ -41,9 +47,7 @@ task :prepare, [:env] do |_, args|
 
   TDK::TerraformConfigManager.setup(env)
 
-  if Rake::Task.task_defined?('custom_prepare')
-    task('custom_prepare').invoke(args.env)
-  end
+  invoke_if_defined('custom_prepare', args.env)
 
   TDK::Command.run(
     'terragrunt init -upgrade=false',
@@ -64,13 +68,14 @@ end
 
 desc 'Creates the infrastructure'
 task :apply, [:env] => :prepare do |_, args|
+  invoke_if_defined('pre_apply', args.env)
+
   env = TDK::Environment.new(args.env)
   destroy_if_fails(env) do
     TDK::Command.run('terragrunt apply', directory: env.working_dir)
   end
-  if Rake::Task.task_defined?('post_apply')
-    task('post_apply').invoke(args.env)
-  end
+
+  invoke_if_defined('post_apply', args.env)
 end
 
 desc 'Tests a local environment'
@@ -81,9 +86,7 @@ task :test, [:env] do |_, args|
   task('apply').invoke(env.name)
 
   destroy_if_fails(env) do
-    if Rake::Task.task_defined?('custom_test')
-      task('custom_test').invoke(args.env)
-    end
+    invoke_if_defined('custom_test', args.env)
   end
 end
 
@@ -97,13 +100,14 @@ end
 
 desc 'Destroys the infrastructure'
 task :destroy, [:env] => :prepare do |_, args|
+  invoke_if_defined('pre_destroy', args.env)
+
   env = TDK::Environment.new(args.env)
   cmd = 'terragrunt destroy'
   cmd += ' -force' if env.local_backend?
   TDK::Command.run(cmd, directory: env.working_dir, close_stdin: false)
-  if Rake::Task.task_defined?('custom_destroy')
-    task('custom_destroy').invoke(args.env)
-  end
+
+  invoke_if_defined('post_destroy', args.env)
 end
 
 desc 'Cleans an environment (infrastructure is destroyed too)'
