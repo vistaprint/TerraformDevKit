@@ -6,7 +6,7 @@ TDK = TerraformDevKit
 raise 'ROOT_PATH is not defined' if defined?(ROOT_PATH).nil?
 BIN_PATH = File.join(ROOT_PATH, 'bin')
 
-# Ensure terraform and terragrunt are in the PATH
+# Ensure terraform is in the PATH
 ENV['PATH'] = TDK::OS.join_env_path(
   TDK::OS.convert_to_local_path(BIN_PATH),
   ENV['PATH']
@@ -29,29 +29,27 @@ task :prepare, [:env] do |_, args|
   config_file = "config/config-#{env.config}.yml"
   puts "== Loading configuration from #{config_file}"
   TDK::Configuration.init(config_file)
-
+  
   TDK::TerraformInstaller.install_local(
     TDK::Configuration.get('terraform-version'),
     directory: BIN_PATH
   )
-  TDK::TerragruntInstaller.install_local(
-    TDK::Configuration.get('terragrunt-version'),
-    directory: BIN_PATH
-  )
 
-  TDK::TerraformConfigManager.setup(env)
+  project = TDK::TerraformProjectConfig.new(TDK::Configuration.get('project-name')
+  TDK::TerraformConfigManager.setup(env, project)
+  TDK::TerraformStateManager.setup(env, project)
 
   if Rake::Task.task_defined?('custom_prepare')
     task('custom_prepare').invoke(args.env)
   end
 
   TDK::Command.run(
-    'terragrunt init -upgrade=false',
+    'terraform init -upgrade=false',
     directory: env.working_dir,
     close_stdin: false
   )
 
-  cmd  = 'terragrunt get'
+  cmd  = 'terraform get'
   cmd += ' -update=true' if TDK::TerraformConfigManager.update_modules?
   TDK::Command.run(cmd, directory: env.working_dir)
 end
@@ -59,14 +57,19 @@ end
 desc 'Shows the plan to create the infrastructure'
 task :plan, [:env] => :prepare do |_, args|
   env = TDK::Environment.new(args.env)
-  TDK::Command.run('terragrunt plan', directory: env.working_dir)
+  TDK::Command.run('terraform plan', directory: env.working_dir)
 end
 
 desc 'Creates the infrastructure'
-task :apply, [:env] => :prepare do |_, args|
+task :apply, [:env, :force] => :prepare do |_, args|
+  args.with_defaults(force: 'false')
   env = TDK::Environment.new(args.env)
+
+  cmd = 'terraform apply'
+  cmd += ' -auto-approve' if env.local_backend? or args.force
+
   destroy_if_fails(env) do
-    TDK::Command.run('terragrunt apply', directory: env.working_dir)
+    TDK::Command.run(cmd, directory: env.working_dir)
   end
 end
 
@@ -75,7 +78,7 @@ task :test, [:env] do |_, args|
   env = TDK::Environment.new(args.env)
   env.local_backend? || (raise 'Testing is only allowed for local environments')
 
-  task('apply').invoke(env.name)
+  task('apply').invoke(env.name, true)
 
   destroy_if_fails(env) do
     if Rake::Task.task_defined?('custom_test')
@@ -95,7 +98,7 @@ end
 desc 'Destroys the infrastructure'
 task :destroy, [:env] => :prepare do |_, args|
   env = TDK::Environment.new(args.env)
-  cmd = 'terragrunt destroy'
+  cmd = 'terraform destroy'
   cmd += ' -force' if env.local_backend?
   TDK::Command.run(cmd, directory: env.working_dir, close_stdin: false)
   if Rake::Task.task_defined?('custom_destroy')

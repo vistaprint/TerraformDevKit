@@ -18,6 +18,8 @@ RSpec.describe TDK::TerraformConfigManager do
       locals {
         env = "{{Environment}}"
         dummy = "{{Dummy}}"
+        project_name = "{{ProjectName}}"
+        project_acronym = "{{ProjectAcronym}}"
       }
     )
   end
@@ -32,6 +34,8 @@ RSpec.describe TDK::TerraformConfigManager do
       locals {
         env = "dev"
         dummy = "foobar"
+        project_name = "some-project"
+        project_acronym = "SP"
       }
     )
   end
@@ -61,6 +65,7 @@ RSpec.describe TDK::TerraformConfigManager do
             aws:
               profile: dummyprofile
               region: dummyregion
+            project-name: some project
           )
         )
       end
@@ -76,10 +81,11 @@ RSpec.describe TDK::TerraformConfigManager do
       # TODO: find a way to make Configuration not a singleton
       TDK::Configuration.init('config.yml')
       env = TDK::Environment.new('dev')
+      project = double(name: 'some-project', acronym: 'SP')
       TDK::TerraformConfigManager.register_extra_vars_proc(
         proc { { Dummy: 'foobar' } }
       )
-      TDK::TerraformConfigManager.setup(env)
+      TDK::TerraformConfigManager.setup(env, project)
 
       expect(File.read('envs/dev/test.tf')).to eq(tf_output)
       expect(File.read('envs/dev/test.tfvars')).to eq(tfvars_output)

@@ -10,11 +10,12 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
     context 'with no region' do
       let(:aws_config) { {} }
+      let(:project)  {{}}
 
       it 'raises an error' do
         expect {
           TDK::TerraformTemplateConfigFile.new(
-            '', env, aws_config
+            '', project, env, aws_config
           ).render
         }.to raise_error(KeyError)
       end
@@ -22,6 +23,9 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
     context 'with no profile' do
       let(:aws_config) { { 'region' => 'dummyregion' } }
+      let(:project) do
+        double(name: 'dummy-project', acronym: 'DP')
+      end
       let(:input) do
         %(
           variable "profile" {
@@ -40,7 +44,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
       it 'renders an empty default profile' do
         output = TDK::TerraformTemplateConfigFile.new(
-          input, env, aws_config
+          input, project, env, aws_config
         ).render
         expect(output).to eq(expected_output)
       end
@@ -52,6 +56,9 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
           'profile' => 'dummyprofile',
           'region' => 'dummyregion'
         }
+      end
+      let(:project) do
+        double(name: 'dummy-project', acronym: 'DP')
       end
       let(:input) do
         %(
@@ -71,7 +78,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
       it 'renders the profile' do
         output = TDK::TerraformTemplateConfigFile.new(
-          input, env, aws_config
+          input, project, env, aws_config
         ).render
         expect(output).to eq(expected_output)
       end
@@ -83,6 +90,9 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
           'profile' => 'dummyprofile',
           'region' => 'dummyregion'
         }
+      end      
+      let(:project) do
+        double(name: 'dummy-project', acronym: 'DP')
       end
       let(:input) do
         %(
@@ -122,7 +132,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
       it 'renders the template with all the values' do
         output = TDK::TerraformTemplateConfigFile.new(
-          input, env, aws_config
+          input, project, env, aws_config
         ).render
         expect(output).to eq(expected_output)
       end
@@ -131,7 +141,10 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
   context 'with remote backend' do
     let(:env_name) { 'prod' }
-    let(:env) { TDK::Environment.new(env_name) }
+    let(:env) { TDK::Environment.new(env_name) }    
+    let(:project) do
+      double(name: 'dummy-project', acronym: 'DP')
+    end
     let(:aws_config) do
       {
         'profile' => 'dummyprofile',
@@ -148,10 +161,16 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
           region = "{{Region}}"
           env = "{{Environment}}"
         }
-
+        
         terraform {
-          backend
-          {{#LocalBackend}}"local"{{/LocalBackend}}{{^LocalBackend}}"s3"{{/LocalBackend}}
+          backend "s3" {
+            bucket     = {{ProjectName}}
+            key        = "{{ProjectAcronym}}-{{Environment}}.tfstate"
+            lock_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
+            encrypt    = true
+            profile    = "{{Profile}}"
+            region     = "{{Region}}"
+          }
         }
       )
     end
@@ -166,17 +185,23 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
           region = "dummyregion"
           env = "prod"
         }
-
+        
         terraform {
-          backend
-          "s3"
+          backend "s3" {
+            bucket     = dummy-project
+            key        = "DP-prod.tfstate"
+            lock_table = "DP-prod-lock-table"
+            encrypt    = true
+            profile    = "dummyprofile"
+            region     = "dummyregion"
+          }
         }
       )
     end
 
     it 'renders the template with all the values' do
       output = TDK::TerraformTemplateConfigFile.new(
-        input, env, aws_config
+        input, project, env, aws_config
       ).render
       expect(output).to eq(expected_output)
     end
@@ -184,7 +209,10 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
   context 'with extra values' do
     let(:env_name) { 'dummyenv' }
-    let(:env) { TDK::Environment.new(env_name) }
+    let(:env) { TDK::Environment.new(env_name) }    
+    let(:project) do
+      double(name: 'dummy-project', acronym: 'DP')
+    end
     let(:aws_config) do
       {
         'profile' => 'dummyprofile',
@@ -209,7 +237,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
     it 'renders the extra values' do
       output = TDK::TerraformTemplateConfigFile.new(
-        input, env, aws_config, extra_vars: { DummyVar: 'FooBar' }
+        input, project, env, aws_config, extra_vars: { DummyVar: 'FooBar' }
       ).render
       expect(output).to eq(expected_output)
     end
