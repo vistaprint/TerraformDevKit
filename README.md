@@ -89,7 +89,7 @@ task :custom_test, [:env] do |_, args|
 end
 ```
 
-### Task and Hooks
+### Tasks and Hooks
 
 TerraformDevKit provides a set of generic tasks to perform:
 
