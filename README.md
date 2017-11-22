@@ -89,6 +89,27 @@ task :custom_test, [:env] do |_, args|
 end
 ```
 
+### Tasks and Hooks
+
+TerraformDevKit provides a set of generic tasks to perform:
+
+* `prepare`: prepares the environment
+* `plan`: shows the plan to create the infrastructure
+* `apply`: creates the infrastructure
+* `destroy`: destroys the infrastructure
+* `clean`: cleans the environment (after destroying the infrastructure)
+* `test`: tests a local environment
+* `preflight`: creates a temporary infrastructure and runs the test task
+
+Additionally, TerraformDevKit allows users to define a set of hooks that will be called during the different steps required to complete the previous list of tasks. The following hooks are available:
+
+* `pre_apply`: invoked before `apply` task runs
+* `post_apply`: invoked after `apply` task runs
+* `pre_destroy`: invoked before `destroy` task runs
+* `post_destroy`: invoked after `destroy` task runs
+* `custom_prepare`: invoked during the preparation process, before terraform is initialized
+* `custom_test`: invoked during as part of the `test` task, right after `apply` completes.
+
 ### Sample Terraform/Terragrunt Templates
 
 The following file (`main.tf.mustache`) contains the infrastructure configuration (a single S3 bucket) as well as information related to the AWS provider.
@@ -148,9 +169,7 @@ terragrunt = {
 
 ### Injecting Additional Variables into Template Files
 
-In addition to the default variables that are passed to Mustache when rendering
-a template file, users can provide additional variables. To do so, users must register a procedure that receives the environment as a parameter and returns
-a map with the extra variables and their values. An example is shown next:
+In addition to the default variables that are passed to Mustache when rendering a template file, users can provide additional variables. To do so, users must register a procedure that receives the environment as a parameter and returns a map with the extra variables and their values. An example is shown next:
 
 ```ruby
 TDK::TerraformConfigManager.register_extra_vars_proc(
@@ -160,14 +179,11 @@ TDK::TerraformConfigManager.register_extra_vars_proc(
 )
 ```
 
-### Skipping Module Updates
+### Updating Modules
 
-For safety and correctness reasons, TerraformDevKit requests to update every
-module when it executes Terraform. This may take a while, depending on the
-number of modules used in the infrastructure.
+Terraform will get the necessary modules every time a new environment is created. Once the modules are cached, there is generally no need to keep updating the modules each time Terraform is executed. When using a module repository it is possible to select a specific version to use (as shown [here](https://www.terraform.io/docs/modules/sources.html#ref)). In such a case, Terraform will automatically update the modules whenever the version number is changed.
 
-When users are sure that an update is not necessary, this step can be skipped
-by setting the environment variable `TF_DEVKIT_SKIP_MODULE_UPDATE` to `true`.
+When using local modules (e.g., during development process) it might be desirable to update the modules every time Terraform runs. This can be achieved by setting the environment variable `TF_DEVKIT_UPDATE_MODULES` to `true`.
 
 ## Development
 
