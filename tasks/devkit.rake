@@ -35,9 +35,24 @@ task :prepare, [:env] do |_, args|
     directory: BIN_PATH
   )
 
-  project = TDK::TerraformProjectConfig.new(TDK::Configuration.get('project-name')
-  TDK::TerraformConfigManager.setup(env, project)
-  TDK::TerraformStateManager.setup(env, project)
+  if env.local_backend?
+    puts "== Initializing remote state"
+    project_config = TDK::TerraformProjectConfig.new(
+      TDK::Configuration.get('project-name')
+    )
+    TDK::TerraformConfigManager.setup(env, project_config)
+    aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
+    dynamo_db = TDK::DynamoDB.new(
+      aws_config.credentials,
+      aws_config.region
+    )
+    s3 = TDK::S3.new(
+      aws_config.credentials,
+      aws_config.region
+    )
+    terraform_lock_table = TDK::TerraformLockTable.new(dynamo_db, s3)
+      .create_lock_table_if_not_exists(env, project_config) 
+  end
 
   if Rake::Task.task_defined?('custom_prepare')
     task('custom_prepare').invoke(args.env)

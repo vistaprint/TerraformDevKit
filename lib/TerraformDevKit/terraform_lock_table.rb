@@ -1,9 +1,11 @@
+require 'aws-sdk'
 
 module TerraformDevKit
   class TerraformLockTable
 
-    def initialize(dynamodb)
+    def initialize(dynamodb, s3)
       @dynamodb = dynamodb
+      @s3 = s3
       @attributes = [
         {
           attribute_name: "LockID", 
@@ -18,14 +20,32 @@ module TerraformDevKit
       ]
     end
 
-    def create_lock_table(environment, project)
-      table_name = "#{project.acronym}-#{environment.config}-lock-table"
+    def create_lock_table_if_not_exists(environment, project)
+
+      table_name = "#{project.acronym}-#{environment.name}-lock-table"
+      return if lock_table_exists_and_is_active(table_name)
+
+      bucket_name = "#{project.name}"
       @dynamodb.create_table(table_name, @attributes, @keys, 1, 1)
 
-      while !@dynamodb.is_table_active(table_name) do
+      begin
+        @s3.create_bucket(bucket_name)
+      rescue Aws::S3::Errors::BucketAlreadyOwnedByYou
+      end
+
+
+      while !lock_table_exists_and_is_active(table_name) do
         sleep(0.2)
       end
     end
-
+    
+    private_class_method
+    def lock_table_exists_and_is_active(table_name)
+      begin  
+        return @dynamodb.get_table_status(table_name) == "ACTIVE"
+      rescue Aws::DynamoDB::Errors::ResourceNotFoundException
+        return false
+      end
+    end
   end
 end
