@@ -40,5 +40,11 @@ module TerraformDevKit
       })
       resp.table.table_status
     end
+
+    def delete_table(table_name)
+      @db_client.delete_table({
+        table_name: table_name,
+      })
+      end
   end
 end

@@ -21,6 +21,20 @@ rescue StandardError => e
   raise
 end
 
+def get_lock_table(env, project_config)
+    TDK::TerraformConfigManager.setup(env, project_config)
+    aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
+    dynamo_db = TDK::DynamoDB.new(
+      aws_config.credentials,
+      aws_config.region
+    )
+    s3 = TDK::S3.new(
+      aws_config.credentials,
+      aws_config.region
+    )
+    TDK::TerraformLockTable.new(dynamo_db, s3)
+end
+
 desc 'Prepares the environment to create the infrastructure'
 task :prepare, [:env] do |_, args|
   puts "== Configuring environment #{args.env}"
@@ -35,23 +49,14 @@ task :prepare, [:env] do |_, args|
     directory: BIN_PATH
   )
 
-  if env.local_backend?
+  unless env.local_backend?
     puts "== Initializing remote state"
+
     project_config = TDK::TerraformProjectConfig.new(
       TDK::Configuration.get('project-name')
     )
-    TDK::TerraformConfigManager.setup(env, project_config)
-    aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
-    dynamo_db = TDK::DynamoDB.new(
-      aws_config.credentials,
-      aws_config.region
-    )
-    s3 = TDK::S3.new(
-      aws_config.credentials,
-      aws_config.region
-    )
-    terraform_lock_table = TDK::TerraformLockTable.new(dynamo_db, s3)
-      .create_lock_table_if_not_exists(env, project_config) 
+    terraform_lock_table = get_lock_table(env, project_config)
+    terraform_lock_table.create_lock_table_if_not_exists(env, project_config) 
   end
 
   if Rake::Task.task_defined?('custom_prepare')
@@ -102,7 +107,7 @@ task :test, [:env] do |_, args|
   end
 end
 
-desc 'Creates the infrastructure and run the tests'
+desc 'Creates the infrastructure and run the tests' 
 task :preflight, [:teardown] do |_, args|
   args.with_defaults(teardown: 'true')
   env = TDK::Environment.new(TDK::Environment.temp_name)
@@ -118,6 +123,19 @@ task :destroy, [:env] => :prepare do |_, args|
   TDK::Command.run(cmd, directory: env.working_dir, close_stdin: false)
   if Rake::Task.task_defined?('custom_destroy')
     task('custom_destroy').invoke(args.env)
+  end
+
+  unless env.local_backend?
+    puts '!!!! WARNING !!!!'
+    puts 'You are about to destroy a remote state. Are you sure you want to proceed? (yes/NO). Only yes will be accepted'
+    response = STDIN.gets.strip
+    if response == 'yes'
+      project_config = TDK::TerraformProjectConfig.new(
+        TDK::Configuration.get('project-name')
+      )
+      terraform_lock_table = get_lock_table(env, project_config)
+      terraform_lock_table.destroy_lock_table(env, project_config) 
+    end
   end
 end
 
