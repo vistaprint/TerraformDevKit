@@ -22,7 +22,6 @@ rescue StandardError => e
 end
 
 def get_lock_table(env, project_config)
-    TDK::TerraformConfigManager.setup(env, project_config)
     aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
     dynamo_db = TDK::DynamoDB.new(
       aws_config.credentials,
@@ -48,13 +47,14 @@ task :prepare, [:env] do |_, args|
     TDK::Configuration.get('terraform-version'),
     directory: BIN_PATH
   )
-
-  unless env.local_backend?
-    puts "== Initializing remote state"
-
-    project_config = TDK::TerraformProjectConfig.new(
+  
+  project_config = TDK::TerraformProjectConfig.new(
       TDK::Configuration.get('project-name')
     )
+  TDK::TerraformConfigManager.setup(env, project_config)
+
+  unless env.local_backend?
+    puts "== Initializing remote state"    
     terraform_lock_table = get_lock_table(env, project_config)
     terraform_lock_table.create_lock_table_if_not_exists(env, project_config) 
   end
