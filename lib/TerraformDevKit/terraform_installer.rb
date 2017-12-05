@@ -10,11 +10,19 @@ module TerraformDevKit
     LOCAL_FILE_NAME = 'terraform.zip'.freeze
 
     def self.installed_terraform_version
-      version = Command.run('terraform --version')[0]
-      match = /Terraform v(\d+\.\d+\.\d+)/.match(version)
-      match[1] unless match.nil?
+      extract_version(Command.run('terraform --version'))
     rescue
       nil
+    end
+
+    def self.extract_version(output)
+      # Terraform vx.y.z might be anywhere in the output (warnings may appear
+      # before the version does). Therefore we scan all the lines.
+
+      matches = output.map { |line| /Terraform v(\d+\.\d+\.\d+)/.match(line) }
+                      .reject(&:nil?)
+
+      matches.count == 1 ? matches[0][1] : nil
     end
 
     def self.install_local(version, directory: Dir.pwd)

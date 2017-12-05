@@ -21,6 +21,12 @@ rescue StandardError => e
   raise
 end
 
+def invoke_if_defined(task_name, env)
+  if Rake::Task.task_defined?(task_name)
+    task(task_name).invoke(env)
+  end
+end
+
 def get_lock_table(env, project_config)
     aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
     dynamo_db = TDK::DynamoDB.new(
@@ -58,10 +64,8 @@ task :prepare, [:env] do |_, args|
     terraform_lock_table = get_lock_table(env, project_config)
     terraform_lock_table.create_lock_table_if_not_exists(env, project_config) 
   end
-
-  if Rake::Task.task_defined?('custom_prepare')
-    task('custom_prepare').invoke(args.env)
-  end
+  
+  invoke_if_defined('custom_prepare', args.env)
 
   TDK::Command.run(
     'terraform init -upgrade=false',
@@ -83,6 +87,8 @@ end
 desc 'Creates the infrastructure'
 task :apply, [:env, :force] => :prepare do |_, args|
   args.with_defaults(force: 'false')
+  invoke_if_defined('pre_apply', args.env)
+  
   env = TDK::Environment.new(args.env)
 
   cmd = 'terraform apply'
@@ -91,6 +97,8 @@ task :apply, [:env, :force] => :prepare do |_, args|
   destroy_if_fails(env) do
     TDK::Command.run(cmd, directory: env.working_dir)
   end
+
+  invoke_if_defined('post_apply', args.env)
 end
 
 desc 'Tests a local environment'
@@ -101,9 +109,7 @@ task :test, [:env] do |_, args|
   task('apply').invoke(env.name, true)
 
   destroy_if_fails(env) do
-    if Rake::Task.task_defined?('custom_test')
-      task('custom_test').invoke(args.env)
-    end
+    invoke_if_defined('custom_test', args.env)
   end
 end
 
@@ -116,7 +122,9 @@ task :preflight, [:teardown] do |_, args|
 end
 
 desc 'Destroys the infrastructure'
-task :destroy, [:env] => :prepare do |_, args|
+task :destroy, [:env] => :prepare do |_, args|  
+  invoke_if_defined('pre_destroy', args.env)
+
   env = TDK::Environment.new(args.env)
   cmd = 'terraform destroy'
   cmd += ' -force' if env.local_backend?
@@ -137,6 +145,8 @@ task :destroy, [:env] => :prepare do |_, args|
       terraform_lock_table.destroy_lock_table(env, project_config) 
     end
   end
+
+  invoke_if_defined('post_destroy', args.env)
 end
 
 desc 'Cleans an environment (infrastructure is destroyed too)'
