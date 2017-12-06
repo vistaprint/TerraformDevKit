@@ -1,11 +1,10 @@
 require 'TerraformDevKit/terraform_lock_table'
 
 RSpec.describe TerraformDevKit::TerraformLockTable do
-
   let!(:dynamodb_double) { double() }
   let!(:s3_double) { double() }
 
-  let(:project_name) { 'dummy-project' }  
+  let(:project_name) { 'dummy-project' }
   let(:project_double) { double(name: project_name, acronym: 'DP') }
   let(:environment_double) { double(name: 'dev') }
 
@@ -15,66 +14,67 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
 
   let(:attributes) {
     [{
-      attribute_name: "LockID", 
-      attribute_type: "S", 
-    }]	
+      attribute_name: 'LockID',
+      attribute_type: 'S'
+    }]
   }
 
   let(:keys) {
     [{
-      attribute_name: "LockID", 
-      key_type: "HASH", 
+      attribute_name: 'LockID',
+      key_type: 'HASH'
     }]
   }
 
   let(:table_name) { 'DP-dev-lock-table' }
+  let(:bucket_name) { 'dummy-project-dev-state' }
 
   describe '.create_lock_table_if_not_exists' do
     context 'when lock table does not exist' do
-      it 'creates the lock table and waits for it to become active' do        
-        allow(dynamodb_double)         
+      it 'creates the lock table and waits for it to become active' do
+        allow(dynamodb_double)
           .to receive(:get_table_status)
           .with(table_name)
-          .and_return("INACTIVE", "INACTIVE","ACTIVE")
-        
+          .and_return('INACTIVE', 'INACTIVE','ACTIVE')
+
         allow(dynamodb_double)
           .to receive(:create_table)
           .with(table_name, attributes, keys, 1, 1)
-        
+
         allow(s3_double)
-          .to receive(:create_bucket)
-          .with(project_name)     
-
-        expect(dynamodb_double)
-          .to receive(:create_table)
-          .with(table_name, attributes, keys, 1, 1)
-          .once
-
-        expect(s3_double)
           .to receive(:create_bucket)
           .with(project_name)
 
         expect(dynamodb_double)
+          .to receive(:create_table)
+          .with(table_name, attributes, keys, 1, 1)
+          .once
+
+        expect(s3_double)
+          .to receive(:create_bucket)
+          .with(bucket_name)
+
+        expect(dynamodb_double)
           .to receive(:get_table_status)
           .exactly(3)
-          .times      
-          
+          .times
+
         terraform_lock_table
-          .create_lock_table_if_not_exists(environment_double, project_double)      
+          .create_lock_table_if_not_exists(environment_double, project_double)
       end
     end
 
     context 'when lock table exists and is active' do
-      it 'should do nothing' do  
+      it 'should do nothing' do
         expect(dynamodb_double)
           .to receive(:get_table_status)
-          .and_return("ACTIVE")
+          .and_return('ACTIVE')
           .once
-        
+
         expect(s3_double)
           .to receive(:create_bucket)
           .never
-        
+
         terraform_lock_table
           .create_lock_table_if_not_exists(environment_double, project_double)
       end
@@ -91,12 +91,11 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
 
         expect(s3_double)
           .to receive(:delete_bucket)
-          .with(project_name)
+          .with(bucket_name)
           .once
 
         terraform_lock_table.destroy_lock_table(environment_double, project_double)
       end
     end
   end
-
 end

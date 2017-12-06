@@ -143,7 +143,7 @@ resource "aws_s3_bucket" "raw" {
 }
 ```
 
-The config file requires a `project-name` to be set. This project name is then use to generate the S3 bucket and dynamodb lock table required by terraform to mamage remote state. To use the remote state feature of TerrafromDevKit you must add the following section to your `main.tf.mustache` file:
+The config file requires a `project-name` to be set. This project name is then use to generate the S3 bucket and dynamodb lock table required by terraform to mamage remote state. To use the remote state feature of TerraformDevKit you must add the following section to your `main.tf.mustache` file:
 
 ```hcl
 terraform {
@@ -153,7 +153,7 @@ terraform {
   {{/LocalBackend}}
   {{^LocalBackend}}
     backend = "s3" {
-      bucket     = "{{ProjectName}}"
+      bucket     = "{{ProjectName}}-{{Environment}}-state"
       key        = "{{ProjectAcronym}}-{{Environment}}.tfstate"
       lock_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
       encrypt    = true
