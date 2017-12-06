@@ -22,13 +22,13 @@ module TerraformDevKit
     end
 
     def create_lock_table_if_not_exists(environment, project)
-      table_name = genertate_table_name(environment, project)
+      table_name = table_name(environment, project)
       return if lock_table_exists_and_is_active(table_name)
 
       @dynamodb.create_table(table_name, ATTRIBUTES, KEYS, 1, 1)
 
       begin
-        @s3.create_bucket(genertate_state_bucket_name(environment, project))
+        @s3.create_bucket(state_bucket_name(environment, project))
       rescue Aws::S3::Errors::BucketAlreadyOwnedByYou
         return
       end
@@ -38,10 +38,10 @@ module TerraformDevKit
     end
 
     def destroy_lock_table(environment, project)
-      table_name = genertate_table_name(environment, project)
+      table_name = table_name(environment, project)
 
       @dynamodb.delete_table(table_name)
-      @s3.delete_bucket(genertate_state_bucket_name(environment, project))
+      @s3.delete_bucket(state_bucket_name(environment, project))
     end
 
     private_class_method
@@ -54,12 +54,12 @@ module TerraformDevKit
     end
 
     private_class_method
-    def genertate_table_name(environment, project)
+    def table_name(environment, project)
       "#{project.acronym}-#{environment.name}-lock-table"
     end
 
     private_class_method
-    def genertate_state_bucket_name(environment, project)
+    def state_bucket_name(environment, project)
       "#{project.name}-#{environment.name}-state"
     end
   end
