@@ -2,48 +2,34 @@ require 'open3'
 
 module TerraformDevKit
   class Command
-    def self.run(cmd, directory: Dir.pwd, print_output: true, close_stdin: true)
-      output = []
-
-      Open3.popen2e(cmd, chdir: directory) do |stdin, stdout_and_stderr, thread|
-        stdout_thread = Thread.new do
-          process_output(stdout_and_stderr, print_output, output)
-        end
-
-        if close_stdin
-          stdin.close
-        else
-          input_thread = Thread.new do
-            loop { stdin.puts $stdin.gets }
-          end
-        end
-
-        thread.join
-        stdout_thread.join
-        input_thread.terminate unless close_stdin
+    def self.run(cmd, directory: Dir.pwd, print_output: true)
+      Open3.popen3(cmd, chdir: directory) do |_, stdout, stderr, thread|
+        output = process_output(stdout, print_output)
+        output.concat process_output(stderr, print_output)
         raise "Error running command #{cmd}" unless thread.value.success?
+        return output
       end
-
-      output
     end
 
     private_class_method
-    def self.process_output(stdout_and_stderr, print_output, output)
+    def self.process_output(std, print_output)
       line = ''
-      stdout_and_stderr.each_char do |char|
-        $stdout.print(char) if print_output
+      lines = []
+      std.each_char do |char|
+        print char if print_output
         case char
         when "\r"
           next
         when "\n"
-          output << line
+          lines << line
           line = ''
         else
           line << char
         end
       end
 
-      output << line unless line.empty?
+      lines << line unless line.empty?
+      lines
     end
   end
 end

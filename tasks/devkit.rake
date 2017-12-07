@@ -12,7 +12,7 @@ ENV['PATH'] = TDK::OS.join_env_path(
   ENV['PATH']
 )
 
-PLAN_FILE = 'plan.txt'.freeze
+PLAN_FILE = 'plan.tfplan'.freeze
 
 def destroy_if_fails(env)
   yield
@@ -68,8 +68,7 @@ task :prepare, [:env] do |_, args|
 
   TDK::Command.run(
     'terraform init -upgrade=false',
-    directory: env.working_dir,
-    close_stdin: false
+    directory: env.working_dir
   )
 
   cmd  = 'terraform get'
@@ -157,10 +156,12 @@ task :destroy, [:env] => :prepare do |_, args|
     task('custom_destroy').invoke(args.env)
   end
 
-  project_config = TDK::TerraformProjectConfig.new(
-    TDK::Configuration.get('project-name')
-  )
-  lock_table.destroy_lock_table(env, project_config)
+  unless env.local_backend?
+    project_config = TDK::TerraformProjectConfig.new(
+      TDK::Configuration.get('project-name')
+    )
+    lock_table.destroy_lock_table(env, project_config)
+  end
 
   invoke_if_defined('post_destroy', args.env)
 end
