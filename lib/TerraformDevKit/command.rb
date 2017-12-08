@@ -8,7 +8,7 @@ module TerraformDevKit
         [stdout, stderr].each do |stream|
           Thread.new {
             output.concat process_output(stream, print_output)
-          }
+          }.join
         end
 
         thread.join
@@ -18,10 +18,10 @@ module TerraformDevKit
     end
 
     private_class_method
-    def self.process_output(std, print_output)
+    def self.process_output(stream, print_output)
       lines = []
 
-      until (line = std.gets).nil?
+      until (line = stream.gets).nil?
         print line if print_output
         lines << line.strip
       end

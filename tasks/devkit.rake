@@ -84,7 +84,6 @@ end
 
 desc 'Creates the infrastructure'
 task :apply, [:env] => :prepare do |_, args|
-  args.with_defaults(force: false)
   invoke_if_defined('pre_apply', args.env)
 
   env = TDK::Environment.new(args.env)
