@@ -3,7 +3,7 @@ require 'aws-sdk'
 Aws.use_bundled_cert!
 
 module TerraformDevKit
-  # Wrapper class around aws dyanmo db
+  # Wrapper class around aws dynamodb
   class DynamoDB
     def initialize(credentials, region)
       @db_client = Aws::DynamoDB::Client.new(

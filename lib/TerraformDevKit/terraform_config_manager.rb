@@ -1,7 +1,6 @@
-require 'TerraformDevKit/terraform_template_config_file'
-require 'TerraformDevKit/terraform_project_config'
-
 require 'fileutils'
+require 'TerraformDevKit/terraform_project_config'
+require 'TerraformDevKit/terraform_template_config_file'
 
 module TerraformDevKit
   class TerraformConfigManager
