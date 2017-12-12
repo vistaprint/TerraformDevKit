@@ -15,7 +15,7 @@ The script collection includes support for:
 * Making simple HTTP requests
 * Retrying a block of code
 * Terraform environment management
-* Locally installing Terraform and [Terragrunt](https://github.com/gruntwork-io/terragrunt)
+* Locally installing Terraform
 * Filtering Terraform logging messages
 
 Most of these scripts exist to provide support to a module development and testing environment for Terraform: [TerraformModules](https://github.com/vistaprint/TerraformModules). But, they might be useful for other purposes too.
@@ -52,7 +52,7 @@ There might be many development environments (`dev`), each one with its own name
 
 Testing (`test`) and production (`prod`) environment use a remote backend. Thus, the Terraform state file is not kept in the local disk, but on S3. This allows multiple developers to easily work on the same infrastructure instance. For safety reasons, operations that affect testing and production environments require manual user input. This is not the case for development environments.
 
-TerraformDevKit expects templated versions (using [Mustache](https://mustache.github.io/)) of the Terraform files. Such files might contain placeholders for several fields such as `Environment`, (AWS) `Region` or (AWS) `Profile`, among others. TerraformDevKit uses the template files to generate the final files that will be consumed by Terraform and Terragrunt. As an example, for the production environment, the resulting files are placed in a directory named `envs/prod`.
+TerraformDevKit expects templated versions (using [Mustache](https://mustache.github.io/)) of the Terraform files. Such files might contain placeholders for several fields such as `Environment`, (AWS) `Region` or (AWS) `Profile`, among others. TerraformDevKit uses the template files to generate the final files that will be consumed by Terraform. As an example, for the production environment, the resulting files are placed in a directory named `envs/prod`.
 
 ### Configuration Files
 
@@ -67,8 +67,8 @@ The first one contains the configuration for **all** the development environment
 A sample configuration files is shown next:
 
 ```yaml
-terraform-version: 0.10.8
-terragrunt-version: 0.13.5
+terraform-version: 0.11.0
+project-name: my super cool project
 aws:
   profile: myprofile
   region: eu-west-1
@@ -110,7 +110,7 @@ Additionally, TerraformDevKit allows users to define a set of hooks that will be
 * `custom_prepare`: invoked during the preparation process, before terraform is initialized
 * `custom_test`: invoked during as part of the `test` task, right after `apply` completes.
 
-### Sample Terraform/Terragrunt Templates
+### Sample Terraform Templates
 
 The following file (`main.tf.mustache`) contains the infrastructure configuration (a single S3 bucket) as well as information related to the AWS provider.
 
@@ -143,21 +143,19 @@ resource "aws_s3_bucket" "raw" {
 }
 ```
 
-An additional file (`terraform.tfvars.mustache`) contains the Terragrunt configuration. Terragrunt is used as it makes it easier to manage a remote backend. While Terraform is able to keep the state file in S3, it does not transparently create the DynamoDB lock table that prevents multiple developers from concurrently modifying the state file. Terragrunt, however, is able to do this without user intervention.
+The config file requires a `project-name` to be set. This project name is then use to generate the S3 bucket and dynamodb lock table required by terraform to mamage remote state. To use the remote state feature of TerraformDevKit you must add the following section to your `main.tf.mustache` file:
 
 ```hcl
-terragrunt = {
-  remote_state {
+terraform {
+  {
   {{#LocalBackend}}
-    backend = "local"
-    config {}
+    backend = "local" {}
   {{/LocalBackend}}
   {{^LocalBackend}}
-    backend = "s3"
-    config {
-      bucket     = "foo-remote-state"
-      key        = "foo-{{Environment}}.tfstate"
-      lock_table = "foo-{{Environment}}-lock-table"
+    backend = "s3" {
+      bucket     = "{{ProjectName}}-{{Environment}}-state"
+      key        = "{{ProjectAcronym}}-{{Environment}}.tfstate"
+      lock_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
       encrypt    = true
       profile    = "{{Profile}}"
       region     = "{{Region}}"

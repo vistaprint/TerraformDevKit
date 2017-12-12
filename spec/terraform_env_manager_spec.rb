@@ -15,7 +15,7 @@ RSpec.describe TerraformEnvManager do
     @terraform_dir = Dir.mktmpdir
 
     Dir.chdir(@terraform_dir) do
-      TerraformDevKit::TerraformInstaller.install_local('0.9.8')
+      TerraformDevKit::TerraformInstaller.install_local('0.11.1')
       ENV['PATH'] = TerraformDevKit::OS.join_env_path(
         TerraformDevKit::OS.convert_to_local_path(Dir.pwd),
         ENV['PATH']
