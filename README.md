@@ -119,9 +119,7 @@ locals {
   env    = "{{Environment}}"
 }
 
-terraform {
-    backend {{#LocalBackend}}"local"{{/LocalBackend}}{{^LocalBackend}}"s3"{{/LocalBackend}} {}
-}
+# See example below for how to configure a remote backend
 
 provider "aws" {
   profile = "{{Profile}}"
@@ -147,12 +145,11 @@ The config file requires a `project-name` to be set. This project name is then u
 
 ```hcl
 terraform {
-  {
   {{#LocalBackend}}
-    backend = "local" {}
+    backend "local" {}
   {{/LocalBackend}}
   {{^LocalBackend}}
-    backend = "s3" {
+    backend "s3" {
       bucket     = "{{ProjectName}}-{{Environment}}-state"
       key        = "{{ProjectAcronym}}-{{Environment}}.tfstate"
       lock_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
@@ -161,7 +158,6 @@ terraform {
       region     = "{{Region}}"
     }
   {{/LocalBackend}}
-  }
 }
 ```
 
