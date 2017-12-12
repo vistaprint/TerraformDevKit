@@ -150,12 +150,12 @@ terraform {
   {{/LocalBackend}}
   {{^LocalBackend}}
     backend "s3" {
-      bucket     = "{{ProjectName}}-{{Environment}}-state"
-      key        = "{{ProjectAcronym}}-{{Environment}}.tfstate"
-      lock_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
-      encrypt    = true
-      profile    = "{{Profile}}"
-      region     = "{{Region}}"
+      bucket         = "{{ProjectName}}-{{Environment}}-state"
+      key            = "{{ProjectAcronym}}-{{Environment}}.tfstate"
+      dynamodb_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
+      encrypt        = true
+      profile        = "{{Profile}}"
+      region         = "{{Region}}"
     }
   {{/LocalBackend}}
 }
