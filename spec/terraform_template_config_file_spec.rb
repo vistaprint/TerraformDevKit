@@ -164,12 +164,12 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
         
         terraform {
           backend "s3" {
-            bucket     = {{ProjectName}}
-            key        = "{{ProjectAcronym}}-{{Environment}}.tfstate"
-            lock_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
-            encrypt    = true
-            profile    = "{{Profile}}"
-            region     = "{{Region}}"
+            bucket         = {{ProjectName}}
+            key            = "{{ProjectAcronym}}-{{Environment}}.tfstate"
+            dynamodb_table = "{{ProjectAcronym}}-{{Environment}}-lock-table"
+            encrypt        = true
+            profile        = "{{Profile}}"
+            region         = "{{Region}}"
           }
         }
       )
@@ -188,12 +188,12 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
         
         terraform {
           backend "s3" {
-            bucket     = dummy-project
-            key        = "DP-prod.tfstate"
-            lock_table = "DP-prod-lock-table"
-            encrypt    = true
-            profile    = "dummyprofile"
-            region     = "dummyregion"
+            bucket         = dummy-project
+            key            = "DP-prod.tfstate"
+            dynamodb_table = "DP-prod-lock-table"
+            encrypt        = true
+            profile        = "dummyprofile"
+            region         = "dummyregion"
           }
         }
       )
