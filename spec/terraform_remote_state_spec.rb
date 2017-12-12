@@ -1,6 +1,6 @@
-require 'TerraformDevKit/terraform_lock_table'
+require 'TerraformDevKit/terraform_remote_state'
 
-RSpec.describe TerraformDevKit::TerraformLockTable do
+RSpec.describe TerraformDevKit::TerraformRemoteState do
   let!(:dynamodb_double) { double() }
   let!(:s3_double) { double() }
 
@@ -8,8 +8,8 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
   let(:project_double) { double(name: project_name, acronym: 'DP') }
   let(:environment_double) { double(name: 'dev') }
 
-  let(:terraform_lock_table) { 
-    TerraformDevKit::TerraformLockTable.new(dynamodb_double, s3_double) 
+  let(:terraform_remote_state) { 
+    TerraformDevKit::TerraformRemoteState.new(dynamodb_double, s3_double) 
   }
 
   let(:attributes) {
@@ -29,13 +29,13 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
   let(:table_name) { 'DP-dev-lock-table' }
   let(:bucket_name) { 'dummy-project-dev-state' }
 
-  describe '.create_lock_table_if_not_exists' do
+  describe '#init' do
     context 'when lock table does not exist' do
       it 'creates the lock table and waits for it to become active' do
         allow(dynamodb_double)
           .to receive(:get_table_status)
           .with(table_name)
-          .and_return('INACTIVE', 'INACTIVE','ACTIVE')
+          .and_return('INACTIVE', 'INACTIVE', 'ACTIVE')
 
         allow(dynamodb_double)
           .to receive(:create_table)
@@ -59,8 +59,8 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
           .exactly(3)
           .times
 
-        terraform_lock_table
-          .create_lock_table_if_not_exists(environment_double, project_double)
+        terraform_remote_state
+          .init(environment_double, project_double)
       end
     end
 
@@ -75,13 +75,17 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
           .to receive(:create_bucket)
           .never
 
-        terraform_lock_table
-          .create_lock_table_if_not_exists(environment_double, project_double)
+        expect(dynamodb_double)
+          .to receive(:create_table)
+          .never
+
+        terraform_remote_state
+          .init(environment_double, project_double)
       end
     end
   end
 
-  describe '.destroy_lock_table' do
+  describe '#destroy' do
     context 'when lock table exists and is active' do
       it 'should delete the table and s3 bucket' do
         expect(dynamodb_double)
@@ -94,7 +98,7 @@ RSpec.describe TerraformDevKit::TerraformLockTable do
           .with(bucket_name)
           .once
 
-        terraform_lock_table.destroy_lock_table(environment_double, project_double)
+        terraform_remote_state.destroy(environment_double, project_double)
       end
     end
   end

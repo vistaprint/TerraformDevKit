@@ -2,7 +2,7 @@ require 'aws-sdk'
 
 module TerraformDevKit
   # Represents a terraform lock table.
-  class TerraformLockTable
+  class TerraformRemoteState
     ATTRIBUTES = [
         {
           attribute_name: 'LockID',
@@ -21,7 +21,7 @@ module TerraformDevKit
       @s3 = s3
     end
 
-    def create_lock_table_if_not_exists(environment, project)
+    def init(environment, project)
       table_name = table_name(environment, project)
       return if lock_table_exists_and_is_active(table_name)
 
@@ -34,10 +34,9 @@ module TerraformDevKit
       end
 
       sleep(0.2) until lock_table_exists_and_is_active(table_name)
-
     end
 
-    def destroy_lock_table(environment, project)
+    def destroy(environment, project)
       table_name = table_name(environment, project)
 
       @dynamodb.delete_table(table_name)
