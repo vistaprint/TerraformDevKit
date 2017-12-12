@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'rainbow'
 require 'TerraformDevKit'
 
 TDK = TerraformDevKit
@@ -27,7 +28,7 @@ def invoke_if_defined(task_name, env)
   task(task_name).invoke(env) if Rake::Task.task_defined?(task_name)
 end
 
-def lock_table
+def remote_state
   aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
   dynamo_db = TDK::DynamoDB.new(
     aws_config.credentials,
@@ -37,7 +38,7 @@ def lock_table
     aws_config.credentials,
     aws_config.region
   )
-  TDK::TerraformLockTable.new(dynamo_db, s3)
+  TDK::TerraformRemoteState.new(dynamo_db, s3)
 end
 
 desc 'Prepares the environment to create the infrastructure'
@@ -61,19 +62,21 @@ task :prepare, [:env] do |_, args|
 
   unless env.local_backend?
     puts '== Initializing remote state'
-    lock_table.create_lock_table_if_not_exists(env, project_config)
+    remote_state.init(env, project_config)
   end
 
   invoke_if_defined('custom_prepare', args.env)
 
-  TDK::Command.run(
-    'terraform init -upgrade=false',
-    directory: env.working_dir
-  )
+  if File.exist?(File.join(env.working_dir, '.terraform'))
+    get_cmd  = 'terraform get'
+    get_cmd += ' -update=true' if TDK::TerraformConfigManager.update_modules?
+    TDK::Command.run(get_cmd, directory: env.working_dir)
+  else
+    init_cmd  = 'terraform init'
+    init_cmd += ' -upgrade=false' unless TDK::TerraformConfigManager.update_modules?
 
-  cmd  = 'terraform get'
-  cmd += ' -update=true' if TDK::TerraformConfigManager.update_modules?
-  TDK::Command.run(cmd, directory: env.working_dir)
+    TDK::Command.run(init_cmd, directory: env.working_dir)
+  end
 end
 
 desc 'Shows the plan to create the infrastructure'
@@ -91,13 +94,12 @@ task :apply, [:env] => :prepare do |_, args|
   task('plan').invoke(env.name)
 
   unless env.local_backend?
-    puts "Are you sure you want to apply the above plan?\n" \
-         "Only 'yes' will be accepted."
+    puts Rainbow("Are you sure you want to apply the above plan?\n" \
+                 "Only 'yes' will be accepted.").green
     response = STDIN.gets.strip
-    if response != 'yes'
-      puts "Apply cancelled because response was not 'yes'.\n" \
-           "Response was: #{response}"
-      exit
+    unless response == 'yes'
+      raise "Apply cancelled because response was not 'yes'.\n" \
+            "Response was: #{response}"
     end
   end
 
@@ -134,32 +136,30 @@ task :destroy, [:env] => :prepare do |_, args|
 
   env = TDK::Environment.new(args.env)
   cmd = 'terraform destroy'
-  cmd += ' -force' if env.local_backend?
 
   unless env.local_backend?
-    puts "!!!! WARNING !!!!\n" \
-         "You are about to destroy #{env.name} and its remote state.\n" \
-         "Are you sure you want to proceed?\n" \
-         "Only 'yes' will be accepted."
+    puts Rainbow("\n\n!!!! WARNING !!!!\n\n" \
+                 "You are about to destroy #{env.name} and its remote state.\n" \
+                 "Are you sure you want to proceed?\n" \
+                 "Only 'yes' will be accepted.").red.bright
     response = STDIN.gets.strip
-    if response != 'yes'
-      puts "Destroy cancelled because response was not 'yes'.\n" \
+
+    unless response == 'yes'
+      raise "Destroy cancelled because response was not 'yes'.\n" \
            "Response was: #{response}"
     end
-
-    cmd += ' -force'
   end
+  
+  cmd += ' -force'
 
   TDK::Command.run(cmd, directory: env.working_dir)
-  if Rake::Task.task_defined?('custom_destroy')
-    task('custom_destroy').invoke(args.env)
-  end
+  invoke_if_defined('pre_destroy', args.env)
 
   unless env.local_backend?
     project_config = TDK::TerraformProjectConfig.new(
       TDK::Configuration.get('project-name')
     )
-    lock_table.destroy_lock_table(env, project_config)
+    remote_state.destroy(env, project_config)
   end
 
   invoke_if_defined('post_destroy', args.env)
