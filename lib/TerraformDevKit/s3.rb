@@ -30,7 +30,7 @@ module TerraformDevKit
       keys_to_delete = @s3_client
                        .list_objects_v2(bucket: bucket_name)
                        .contents
-                       .map{ |x| {key: x.key } }
+                       .map { |x| { key: x.key } }
 
       @s3_client.delete_objects(
         bucket: bucket_name,
