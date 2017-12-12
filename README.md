@@ -67,7 +67,7 @@ The first one contains the configuration for **all** the development environment
 A sample configuration files is shown next:
 
 ```yaml
-terraform-version: 0.11
+terraform-version: 0.11.0
 project-name: my super cool project
 aws:
   profile: myprofile
