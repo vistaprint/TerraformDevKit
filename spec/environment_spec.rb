@@ -1,6 +1,9 @@
+require 'fileutils'
 require 'TerraformDevKit/environment'
 
 TDK = TerraformDevKit
+
+ROOT_PATH = 'C:/some/root/path'
 
 RSpec.describe TerraformDevKit::Environment do
   describe '#initialize' do
@@ -41,7 +44,7 @@ RSpec.describe TerraformDevKit::Environment do
   describe '#working_dir' do
     it 'prefixes environment name correctly' do
       dir = TDK::Environment.new('foobar').working_dir
-      expect(dir).to eq('envs/foobar')
+      expect(dir).to eq(File.join(ROOT_PATH,'envs', 'foobar'))
     end
   end
 
