@@ -6,6 +6,7 @@ TDK = TerraformDevKit
 
 raise 'ROOT_PATH is not defined' if defined?(ROOT_PATH).nil?
 BIN_PATH = File.join(ROOT_PATH, 'bin')
+CONFIG_FILE ||= File.join(ROOT_PATH, 'config', 'config-%s.yml')
 
 # Ensure terraform is in the PATH
 ENV['PATH'] = TDK::OS.join_env_path(
@@ -15,17 +16,17 @@ ENV['PATH'] = TDK::OS.join_env_path(
 
 PLAN_FILE = 'plan.tfplan'.freeze
 
-def destroy_if_fails(env)
+def destroy_if_fails(env, task)
   yield
 rescue StandardError => e
   puts "ERROR: #{e.message}"
   puts e.backtrace.join("\n")
-  task('destroy').invoke(env.name) if env.local_backend?
+  Rake::Task[task_in_current_namespace('destroy', task)].invoke(env.name) if env.local_backend?
   raise
 end
 
 def invoke_if_defined(task_name, env)
-  task(task_name).invoke(env) if Rake::Task.task_defined?(task_name)
+  Rake::Task[task_name].invoke(env) if Rake::Task.task_defined?(task_name)
 end
 
 def remote_state
@@ -38,7 +39,7 @@ def remote_state
     aws_config.credentials,
     aws_config.region
   )
-  TDK::TerraformRemoteState.new(dynamo_db, s3)
+  TDK::   TerraformRemoteState.new(dynamo_db, s3)
 end
 
 desc 'Prepares the environment to create the infrastructure'
@@ -46,7 +47,7 @@ task :prepare, [:env] do |_, args|
   puts "== Configuring environment #{args.env}"
   env = TDK::Environment.new(args.env)
 
-  config_file = "config/config-#{env.config}.yml"
+  config_file = CONFIG_FILE % env.config
   puts "== Loading configuration from #{config_file}"
   TDK::Configuration.init(config_file)
 
@@ -65,7 +66,7 @@ task :prepare, [:env] do |_, args|
     remote_state.init(env, project_config)
   end
 
-  invoke_if_defined('custom_prepare', args.env)
+  invoke_if_defined(task_in_current_namespace('custom_prepare', task), args.env)
 
   if File.exist?(File.join(env.working_dir, '.terraform'))
     get_cmd  = 'terraform get'
@@ -86,12 +87,12 @@ task :plan, [:env] => :prepare do |_, args|
 end
 
 desc 'Creates the infrastructure'
-task :apply, [:env] => :prepare do |_, args|
-  invoke_if_defined('pre_apply', args.env)
+task :apply, [:env] => :prepare do |task, args|
+  invoke_if_defined(task_in_current_namespace('pre_apply', task), args.env)
 
   env = TDK::Environment.new(args.env)
 
-  task('plan').invoke(env.name)
+  Rake::Task[task_in_current_namespace('plan', task)].invoke(env.name)
 
   unless env.local_backend?
     puts Rainbow("Are you sure you want to apply the above plan?\n" \
@@ -103,31 +104,41 @@ task :apply, [:env] => :prepare do |_, args|
     end
   end
 
-  destroy_if_fails(env) do
+  destroy_if_fails(env, task) do
     TDK::Command.run("terraform apply \"#{PLAN_FILE}\"", directory: env.working_dir)
   end
 
-  invoke_if_defined('post_apply', args.env)
+  invoke_if_defined(task_in_current_namespace('post_apply', task), args.env)
 end
 
 desc 'Tests a local environment'
-task :test, [:env] do |_, args|
+task :test, [:env] do |task, args|
   env = TDK::Environment.new(args.env)
   env.local_backend? || (raise 'Testing is only allowed for local environments')
 
-  task('apply').invoke(env.name, true)
+  Rake::Task[task_in_current_namespace('apply', task)].invoke(env.name, true)
 
-  destroy_if_fails(env) do
-    invoke_if_defined('custom_test', args.env)
+  destroy_if_fails(env, task) do
+    invoke_if_defined(task_in_current_namespace('custom_test', task), args.env)
   end
 end
 
-desc 'Creates the infrastructure and run the tests'
-task :preflight, [:teardown] do |_, args|
+desc 'Creates the infrastructure and runs the tests'
+task :preflight, [:prefix, :teardown] do |task, args|
   args.with_defaults(teardown: 'true')
-  env = TDK::Environment.new(TDK::Environment.temp_name)
-  task('test').invoke(env.name)
-  task('clean').invoke(env.name) if args.teardown == 'true'
+  args.with_defaults(prefix: TDK::Environment.temp_name)
+  env = TDK::Environment.new(args.prefix)
+
+  Rake::Task[task_in_current_namespace('test', task)].invoke(env.name)
+  Rake::Task[task_in_current_namespace('clean', task)].invoke(env.name) if args.teardown == 'true'
+end
+
+def task_in_current_namespace(task_name, current_task)
+  if current_task.scope.path.to_s.empty?
+    return task_name
+  end
+
+  return "#{current_task.scope.path}:#{task_name}"
 end
 
 desc 'Destroys the infrastructure'
