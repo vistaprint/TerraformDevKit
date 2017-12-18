@@ -18,7 +18,7 @@ PLAN_FILE = 'plan.tfplan'.freeze
 
 def destroy_if_fails(env, task)
   yield
-rescue StandardError => e
+rescue Exception => e
   puts "ERROR: #{e.message}"
   puts e.backtrace.join("\n")
   Rake::Task[task_in_current_namespace('destroy', task)].invoke(env.name) if env.local_backend?
@@ -39,7 +39,7 @@ def remote_state
     aws_config.credentials,
     aws_config.region
   )
-  TDK::   TerraformRemoteState.new(dynamo_db, s3)
+  TDK::TerraformRemoteState.new(dynamo_db, s3)
 end
 
 desc 'Prepares the environment to create the infrastructure'
