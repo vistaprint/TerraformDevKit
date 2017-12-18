@@ -18,7 +18,6 @@ module TerraformDevKit
 
       until (line = stream.gets).nil?
         print line if print_output
-        stream.flush
         lines << line.strip
       end
       lines
