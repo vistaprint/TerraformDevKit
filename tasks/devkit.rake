@@ -83,7 +83,9 @@ end
 desc 'Shows the plan to create the infrastructure'
 task :plan, [:env] => :prepare do |_, args|
   env = TDK::Environment.new(args.env)
-  TDK::Command.run("terraform plan -out=#{PLAN_FILE}", directory: env.working_dir)
+  Dir.chdir(env.working_dir) do
+    system("terraform plan -out=#{PLAN_FILE}")
+  end
 end
 
 desc 'Creates the infrastructure'
@@ -104,8 +106,10 @@ task :apply, [:env] => :prepare do |task, args|
     end
   end
 
-  destroy_if_fails(env, task) do
-    TDK::Command.run("terraform apply \"#{PLAN_FILE}\"", directory: env.working_dir)
+  destroy_if_fails(env) do
+    Dir.chdir(env.working_dir) do
+      system("terraform apply \"#{PLAN_FILE}\"")
+    end
   end
 
   invoke_if_defined(task_in_current_namespace('post_apply', task), args.env)
@@ -163,7 +167,9 @@ task :destroy, [:env] => :prepare do |_, args|
   
   cmd += ' -force'
 
-  TDK::Command.run(cmd, directory: env.working_dir)
+  Dir.chdir(env.working_dir) do
+    system(cmd)
+  end
   invoke_if_defined('pre_destroy', args.env)
 
   unless env.local_backend?
