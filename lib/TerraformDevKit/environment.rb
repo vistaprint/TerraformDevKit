@@ -1,4 +1,3 @@
-require 'fileutils'
 require 'socket'
 
 module TerraformDevKit

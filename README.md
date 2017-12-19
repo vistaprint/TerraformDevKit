@@ -89,6 +89,16 @@ task :custom_test, [:env] do |_, args|
 end
 ```
 
+#### Overrides
+
+It's possible to override the location of your config files by setting the variable `CONFIG_FILE` in the top level `Rakefile`
+
+```ruby
+# %s will be substituted with the environment name.
+# File is exected to live in /c/path/to/root/config/config-dev.yml
+CONFIG_FILE = File.join(ROOT_PATH, 'config', 'config-%s.yml')
+```
+
 ### Tasks and Hooks
 
 TerraformDevKit provides a set of generic tasks to perform:
