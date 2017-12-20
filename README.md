@@ -20,6 +20,8 @@ The script collection includes support for:
 
 Most of these scripts exist to provide support to a module development and testing environment for Terraform: [TerraformModules](https://github.com/vistaprint/TerraformModules). But, they might be useful for other purposes too.
 
+Currently this repository is tightly coupled with AWS and has not been tested to work with other providers. We are actively working to change this and hope to have a more generic solution soon. If you would like to see support for your favourite cloud provider please have submit a pull request implementing support and we will be more than happy to merge your changes in.
+
 ## Installation
 
 Add this line to your application's Gemfile:
