@@ -21,21 +21,14 @@ def destroy_if_fails(env, task)
 rescue Exception => e
   puts "ERROR: #{e.message}"
   puts e.backtrace.join("\n")
-  Rake::Task[task_in_current_namespace('destroy', task)].invoke(env.name) if env.local_backend?
+  invoke('destroy', task, env.name) if env.local_backend?
   raise
 end
 
-def invoke(task_name, task_context, env, safe_invoke = false)
+def invoke(task_name, task_context, env, safe_invoke: false)
   task_in_context = task_in_current_namespace(task_name, task_context)
-  if safe_invoke
-    invoke_if_defined(task_in_context, env)
-  else
-    Rake::Task[task_name].invoke(env)
-  end
-end
-
-def invoke_if_defined(task_name, env)
-  Rake::Task[task_name].invoke(env) if Rake::Task.task_defined?(task_name)
+  should_invoke = !safe_invoke || Rake::Task.task_defined?(task_name)
+  Rake::Task[task_in_context].invoke(env) if should_invoke
 end
 
 def task_in_current_namespace(task_name, current_task)
