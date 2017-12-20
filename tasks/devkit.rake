@@ -6,6 +6,7 @@ TDK = TerraformDevKit
 
 raise 'ROOT_PATH is not defined' if defined?(ROOT_PATH).nil?
 BIN_PATH = File.join(ROOT_PATH, 'bin')
+CONFIG_FILE ||= File.join(ROOT_PATH, 'config', 'config-%s.yml')
 
 # Ensure terraform is in the PATH
 ENV['PATH'] = TDK::OS.join_env_path(
@@ -15,17 +16,28 @@ ENV['PATH'] = TDK::OS.join_env_path(
 
 PLAN_FILE = 'plan.tfplan'.freeze
 
-def destroy_if_fails(env)
+def destroy_if_fails(env, task)
   yield
-rescue StandardError => e
+rescue Exception => e
   puts "ERROR: #{e.message}"
   puts e.backtrace.join("\n")
-  task('destroy').invoke(env.name) if env.local_backend?
+  invoke('destroy', task, env.name) if env.local_backend?
   raise
 end
 
-def invoke_if_defined(task_name, env)
-  task(task_name).invoke(env) if Rake::Task.task_defined?(task_name)
+def invoke(task_name, task_context, env, safe_invoke: false)
+  task_in_context = task_in_current_namespace(task_name, task_context)
+  should_invoke = !safe_invoke || Rake::Task.task_defined?(task_name)
+  Rake::Task[task_in_context].invoke(env) if should_invoke
+end
+
+def task_in_current_namespace(task_name, current_task)
+  namespace = current_task.scope.path.to_s
+  if namespace.empty?
+    return task_name
+  end
+
+  return "#{namespace}:#{task_name}"
 end
 
 def remote_state
@@ -46,7 +58,7 @@ task :prepare, [:env] do |_, args|
   puts "== Configuring environment #{args.env}"
   env = TDK::Environment.new(args.env)
 
-  config_file = "config/config-#{env.config}.yml"
+  config_file = CONFIG_FILE % env.config
   puts "== Loading configuration from #{config_file}"
   TDK::Configuration.init(config_file)
 
@@ -65,7 +77,7 @@ task :prepare, [:env] do |_, args|
     remote_state.init(env, project_config)
   end
 
-  invoke_if_defined('custom_prepare', args.env)
+  invoke('custom_prepare', task, args.env, safe_invoke: true)
 
   if File.exist?(File.join(env.working_dir, '.terraform'))
     get_cmd  = 'terraform get'
@@ -88,12 +100,12 @@ task :plan, [:env] => :prepare do |_, args|
 end
 
 desc 'Creates the infrastructure'
-task :apply, [:env] => :prepare do |_, args|
-  invoke_if_defined('pre_apply', args.env)
+task :apply, [:env] => :prepare do |task, args|
+  invoke('pre_apply', task, args.env, safe_invoke: true)
 
   env = TDK::Environment.new(args.env)
 
-  task('plan').invoke(env.name)
+  invoke('plan', task, env.name)
 
   unless env.local_backend?
     puts Rainbow("Are you sure you want to apply the above plan?\n" \
@@ -105,38 +117,40 @@ task :apply, [:env] => :prepare do |_, args|
     end
   end
 
-  destroy_if_fails(env) do
+  destroy_if_fails(env, task) do
     Dir.chdir(env.working_dir) do
       system("terraform apply \"#{PLAN_FILE}\"")
     end
   end
 
-  invoke_if_defined('post_apply', args.env)
+  invoke('post_apply', task, args.env, safe_invoke: true)
 end
 
 desc 'Tests a local environment'
-task :test, [:env] do |_, args|
+task :test, [:env] do |task, args|
   env = TDK::Environment.new(args.env)
   env.local_backend? || (raise 'Testing is only allowed for local environments')
 
-  task('apply').invoke(env.name, true)
+  invoke('apply', task, env.name)
 
-  destroy_if_fails(env) do
-    invoke_if_defined('custom_test', args.env)
+  destroy_if_fails(env, task) do
+    invoke('custom_test', task, args.env, safe_invoke: true)
   end
 end
 
-desc 'Creates the infrastructure and run the tests'
-task :preflight, [:teardown] do |_, args|
+desc 'Creates the infrastructure and runs the tests'
+task :preflight, [:prefix, :teardown] do |task, args|
   args.with_defaults(teardown: 'true')
-  env = TDK::Environment.new(TDK::Environment.temp_name)
-  task('test').invoke(env.name)
-  task('clean').invoke(env.name) if args.teardown == 'true'
+  args.with_defaults(prefix: TDK::Environment.temp_name)
+  env = TDK::Environment.new(args.prefix)
+
+  invoke('test', task, env.name)
+  invoke('clean', task, env.name) if args.teardown == 'true'
 end
 
 desc 'Destroys the infrastructure'
-task :destroy, [:env] => :prepare do |_, args|
-  invoke_if_defined('pre_destroy', args.env)
+task :destroy, [:env] => :prepare do |task, args|
+  invoke('pre_destroy', task, args.env, safe_invoke: true)
 
   env = TDK::Environment.new(args.env)
   cmd = 'terraform destroy'
@@ -159,7 +173,7 @@ task :destroy, [:env] => :prepare do |_, args|
   Dir.chdir(env.working_dir) do
     system(cmd)
   end
-  invoke_if_defined('pre_destroy', args.env)
+  invoke('pre_destroy', task, args.env, safe_invoke: true)
 
   unless env.local_backend?
     project_config = TDK::TerraformProjectConfig.new(
@@ -168,7 +182,7 @@ task :destroy, [:env] => :prepare do |_, args|
     remote_state.destroy(env, project_config)
   end
 
-  invoke_if_defined('post_destroy', args.env)
+  invoke('post_destroy', task, args.env, safe_invoke: true)
 end
 
 desc 'Cleans an environment (infrastructure is destroyed too)'
