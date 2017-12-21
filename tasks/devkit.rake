@@ -27,7 +27,7 @@ end
 
 def invoke(task_name, task_context, env, safe_invoke: false)
   task_in_context = task_in_current_namespace(task_name, task_context)
-  should_invoke = !safe_invoke || Rake::Task.task_defined?(task_name)
+  should_invoke = !safe_invoke || Rake::Task.task_defined?(task_in_context)
   Rake::Task[task_in_context].invoke(env) if should_invoke
 end
 
