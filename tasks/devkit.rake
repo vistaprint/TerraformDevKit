@@ -1,4 +1,3 @@
-require 'fileutils'
 require 'rainbow'
 require 'TerraformDevKit'
 
@@ -188,6 +187,6 @@ end
 desc 'Cleans an environment (infrastructure is destroyed too)'
 task :clean, [:env] => :destroy do |_, args|
   env = TDK::Environment.new(args.env)
-  puts "Deleting environment #{env.name}"
-  FileUtils.rm_rf(env.working_dir, secure: true)
+  puts "Deleting environment #{env.name} in #{env.working_dir}"
+  TDK::ExtendedFileUtils.rm_rf(env.working_dir, secure: true)
 end
