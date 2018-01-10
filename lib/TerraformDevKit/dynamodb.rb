@@ -1,4 +1,4 @@
-require 'aws-sdk'
+require 'aws-sdk-dynamodb'
 
 Aws.use_bundled_cert!
 
@@ -12,14 +12,8 @@ module TerraformDevKit
       )
     end
 
-    def get_item(table_name, key)
-      table = @db_client.table(table_name)
-      table.get_item(key: key)
-    end
-
     def put_item(table_name, item)
-      table = @db_client.table(table_name)
-      table.put_item(item: item)
+      @db_client.put_item({item: item, table_name: table_name})
     end
 
     def create_table(table_name, attributes, keys, read_capacity, write_capacity)
@@ -45,6 +39,7 @@ module TerraformDevKit
       @db_client.delete_table({
         table_name: table_name,
       })
-      end
+    end
+
   end
 end

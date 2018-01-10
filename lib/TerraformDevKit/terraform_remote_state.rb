@@ -1,4 +1,5 @@
-require 'aws-sdk'
+require 'aws-sdk-dynamodb'
+require 'aws-sdk-s3'
 
 module TerraformDevKit
   # Represents a terraform lock table.
