@@ -81,7 +81,11 @@ desc 'Creates the infrastructure'
 task :apply, [:env] => :prepare do |task, args|
   env = TDK::Environment.new(args.env)
 
-  invoke('pre_apply', task, env.name, safe_invoke: true)
+  # TODO: pre_apply takes place before running terraform apply.
+  # We must prevent that for prod and test unless there is user confirmation.
+  # Commenting it out until a solution is decided.
+
+  # invoke('pre_apply', task, env.name, safe_invoke: true)
 
   destroy_if_fails(env, task) do
     cmd  = 'terraform apply'
