@@ -77,7 +77,6 @@ RSpec.describe TDK::TerraformConfigManager do
   end
 
   it 'creates configuration files' do
-    ROOT_PATH = @tmpdir
     Dir.chdir(@tmpdir) do
       # TODO: find a way to make Configuration not a singleton
       TDK::Configuration.init('config.yml')

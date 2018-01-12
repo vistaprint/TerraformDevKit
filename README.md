@@ -81,8 +81,6 @@ The AWS profile **must not** be specified for test and production accounts, as u
 ### A Minimal Rakefile
 
 ```ruby
-ROOT_PATH = File.dirname(File.expand_path(__FILE__))
-
 spec = Gem::Specification.find_by_name 'TerraformDevKit'
 load "#{spec.gem_dir}/tasks/devkit.rake"
 
@@ -97,8 +95,8 @@ It's possible to override the location of your config files by setting the varia
 
 ```ruby
 # %s will be substituted with the environment name.
-# File is exected to live in /c/path/to/root/config/config-dev.yml
-CONFIG_FILE = File.join(ROOT_PATH, 'config', 'config-%s.yml')
+# File is exected to live in config/config-dev.yml
+CONFIG_FILE = File.join('config', 'config-%s.yml')
 ```
 
 ### Tasks and Hooks

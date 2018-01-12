@@ -3,17 +3,14 @@ require 'TerraformDevKit'
 
 TDK = TerraformDevKit
 
-raise 'ROOT_PATH is not defined' if defined?(ROOT_PATH).nil?
-BIN_PATH = File.join(ROOT_PATH, 'bin')
-CONFIG_FILE ||= File.join(ROOT_PATH, 'config', 'config-%s.yml')
+BIN_PATH = File.expand_path('bin')
+CONFIG_FILE ||= File.expand_path(File.join('config', 'config-%s.yml'))
 
 # Ensure terraform is in the PATH
 ENV['PATH'] = TDK::OS.join_env_path(
   TDK::OS.convert_to_local_path(BIN_PATH),
   ENV['PATH']
 )
-
-PLAN_FILE = 'plan.tfplan'.freeze
 
 def destroy_if_fails(env, task)
   yield
@@ -32,24 +29,24 @@ end
 
 def task_in_current_namespace(task_name, current_task)
   namespace = current_task.scope.path.to_s
-  if namespace.empty?
-    return task_name
-  end
-
-  return "#{namespace}:#{task_name}"
+  namespace.empty? ? task_name : "#{namespace}:#{task_name}"
 end
 
 def remote_state
   aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
-  dynamo_db = TDK::DynamoDB.new(
-    aws_config.credentials,
-    aws_config.region
+  TDK::TerraformRemoteState.new(
+    TDK::DynamoDB.new(aws_config.credentials, aws_config.region),
+    TDK::S3.new(aws_config.credentials, aws_config.region)
   )
-  s3 = TDK::S3.new(
-    aws_config.credentials,
-    aws_config.region
-  )
-  TDK::TerraformRemoteState.new(dynamo_db, s3)
+end
+
+def prompt_for_confirmation(env, action)
+  TDK.warning(env.name)
+  puts Rainbow("You are about to execute action #{action}.\n" \
+               "Are you sure you want to proceed?\n" \
+               "Only 'yes' will be accepted.").red.bright
+  response = STDIN.gets.strip
+  response == 'yes' || (raise 'Action cancelled because response was not "yes"')
 end
 
 desc 'Prepares the environment to create the infrastructure'
@@ -76,53 +73,35 @@ task :prepare, [:env] do |_, args|
     remote_state.init(env, project_config)
   end
 
-  invoke('custom_prepare', task, args.env, safe_invoke: true)
+  invoke('custom_prepare', task, env.name, safe_invoke: true)
 
-  if File.exist?(File.join(env.working_dir, '.terraform'))
-    get_cmd  = 'terraform get'
-    get_cmd += ' -update=true' if TDK::TerraformConfigManager.update_modules?
-    TDK::Command.run(get_cmd, directory: env.working_dir)
-  else
-    init_cmd  = 'terraform init'
-    init_cmd += ' -upgrade=false' unless TDK::TerraformConfigManager.update_modules?
-
-    TDK::Command.run(init_cmd, directory: env.working_dir)
-  end
+  cmd  = 'terraform init'
+  cmd += ' -upgrade=false' unless TDK::TerraformConfigManager.update_modules?
+  TDK::Command.run(cmd, directory: env.working_dir)
 end
 
 desc 'Shows the plan to create the infrastructure'
 task :plan, [:env] => :prepare do |_, args|
   env = TDK::Environment.new(args.env)
-  Dir.chdir(env.working_dir) do
-    system("terraform plan -out=#{PLAN_FILE}")
-  end
+  TDK::Command.run('terraform plan', directory: env.working_dir)
 end
 
 desc 'Creates the infrastructure'
 task :apply, [:env] => :prepare do |task, args|
-  invoke('pre_apply', task, args.env, safe_invoke: true)
-
   env = TDK::Environment.new(args.env)
 
-  invoke('plan', task, env.name)
+  prompt_for_confirmation(env, 'apply') unless env.local_backend?
 
-  unless env.local_backend?
-    puts Rainbow("Are you sure you want to apply the above plan?\n" \
-                 "Only 'yes' will be accepted.").green
-    response = STDIN.gets.strip
-    unless response == 'yes'
-      raise "Apply cancelled because response was not 'yes'.\n" \
-            "Response was: #{response}"
-    end
-  end
+  invoke('pre_apply', task, env.name, safe_invoke: true)
 
   destroy_if_fails(env, task) do
-    Dir.chdir(env.working_dir) do
-      system("terraform apply \"#{PLAN_FILE}\"")
-    end
+    # TODO: Shall we just use auto-approve?
+    cmd  = 'terraform apply'
+    cmd += ' -auto-approve' if env.local_backend?
+    TDK::Command.run(cmd, directory: env.working_dir)
   end
 
-  invoke('post_apply', task, args.env, safe_invoke: true)
+  invoke('post_apply', task, env.name, safe_invoke: true)
 end
 
 desc 'Tests a local environment'
@@ -133,7 +112,7 @@ task :test, [:env] do |task, args|
   invoke('apply', task, env.name)
 
   destroy_if_fails(env, task) do
-    invoke('custom_test', task, args.env, safe_invoke: true)
+    invoke('custom_test', task, env.name, safe_invoke: true)
   end
 end
 
@@ -149,30 +128,19 @@ end
 
 desc 'Destroys the infrastructure'
 task :destroy, [:env] => :prepare do |task, args|
-  invoke('pre_destroy', task, args.env, safe_invoke: true)
-
   env = TDK::Environment.new(args.env)
-  cmd = 'terraform destroy'
 
-  unless env.local_backend?
-    puts Rainbow("\n\n!!!! WARNING !!!!\n\n" \
-                 "You are about to destroy #{env.name} and its remote state.\n" \
-                 "Are you sure you want to proceed?\n" \
-                 "Only 'yes' will be accepted.").red.bright
-    response = STDIN.gets.strip
+  prompt_for_confirmation(env, 'destroy') unless env.local_backend?
 
-    unless response == 'yes'
-      raise "Destroy cancelled because response was not 'yes'.\n" \
-           "Response was: #{response}"
-    end
-  end
-  
-  cmd += ' -force'
+  invoke('pre_destroy', task, env.name, safe_invoke: true)
 
-  Dir.chdir(env.working_dir) do
-    system(cmd)
-  end
-  invoke('pre_destroy', task, args.env, safe_invoke: true)
+  TDK.warning(env.name) unless env.local_backend?
+
+  cmd  = 'terraform destroy'
+  # TODO: Shall we just use force?
+  cmd += ' -force' if env.local_backend?
+
+  TDK::Command.run(cmd, directory: env.working_dir)
 
   unless env.local_backend?
     project_config = TDK::TerraformProjectConfig.new(
@@ -181,7 +149,7 @@ task :destroy, [:env] => :prepare do |task, args|
     remote_state.destroy(env, project_config)
   end
 
-  invoke('post_destroy', task, args.env, safe_invoke: true)
+  invoke('post_destroy', task, env.name, safe_invoke: true)
 end
 
 desc 'Cleans an environment (infrastructure is destroyed too)'

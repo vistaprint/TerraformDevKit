@@ -30,7 +30,7 @@ module TerraformDevKit
     end
 
     def working_dir
-      File.join(ROOT_PATH, 'envs', @name)
+      File.join('envs', @name)
     end
 
     def self.temp_name
