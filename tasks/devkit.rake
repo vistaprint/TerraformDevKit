@@ -1,4 +1,4 @@
-require 'fileutils'
+require 'rainbow'
 require 'TerraformDevKit'
 
 TDK = TerraformDevKit
@@ -23,7 +23,7 @@ end
 
 def invoke(task_name, task_context, env, safe_invoke: false)
   task_in_context = task_in_current_namespace(task_name, task_context)
-  should_invoke = !safe_invoke || Rake::Task.task_defined?(task_name)
+  should_invoke = !safe_invoke || Rake::Task.task_defined?(task_in_context)
   Rake::Task[task_in_context].invoke(env) if should_invoke
 end
 
@@ -38,6 +38,15 @@ def remote_state
     TDK::DynamoDB.new(aws_config.credentials, aws_config.region),
     TDK::S3.new(aws_config.credentials, aws_config.region)
   )
+end
+
+def prompt_for_confirmation(env, action)
+  TDK.warning(env.name)
+  puts Rainbow("You are about to execute action #{action}.\n" \
+               "Are you sure you want to proceed?\n" \
+               "Only 'yes' will be accepted.").red.bright
+  response = STDIN.gets.strip
+  response == 'yes' || (raise 'Action cancelled because response was not "yes"')
 end
 
 desc 'Prepares the environment to create the infrastructure'
@@ -81,13 +90,12 @@ desc 'Creates the infrastructure'
 task :apply, [:env] => :prepare do |task, args|
   env = TDK::Environment.new(args.env)
 
-  # TODO: pre_apply takes place before running terraform apply.
-  # We must prevent that for prod and test unless there is user confirmation.
-  # Commenting it out until a solution is decided.
+  prompt_for_confirmation(env, 'apply') unless env.local_backend?
 
-  # invoke('pre_apply', task, env.name, safe_invoke: true)
+  invoke('pre_apply', task, env.name, safe_invoke: true)
 
   destroy_if_fails(env, task) do
+    # TODO: Shall we just use auto-approve?
     cmd  = 'terraform apply'
     cmd += ' -auto-approve' if env.local_backend?
     TDK::Command.run(cmd, directory: env.working_dir)
@@ -122,15 +130,14 @@ desc 'Destroys the infrastructure'
 task :destroy, [:env] => :prepare do |task, args|
   env = TDK::Environment.new(args.env)
 
-  # TODO: pre_destroy takes place before running terraform destroy.
-  # We must prevent that for prod and test unless there is user confirmation.
-  # Commenting it out until a solution is decided.
+  prompt_for_confirmation(env, 'destroy') unless env.local_backend?
 
-  # invoke('pre_destroy', task, env.name, safe_invoke: true)
+  invoke('pre_destroy', task, env.name, safe_invoke: true)
 
   TDK.warning(env.name) unless env.local_backend?
 
   cmd  = 'terraform destroy'
+  # TODO: Shall we just use force?
   cmd += ' -force' if env.local_backend?
 
   TDK::Command.run(cmd, directory: env.working_dir)
@@ -148,6 +155,6 @@ end
 desc 'Cleans an environment (infrastructure is destroyed too)'
 task :clean, [:env] => :destroy do |_, args|
   env = TDK::Environment.new(args.env)
-  puts "Deleting environment #{env.name}"
-  FileUtils.rm_rf(env.working_dir, secure: true)
+  puts "Deleting environment #{env.name} in #{env.working_dir}"
+  TDK::ExtendedFileUtils.rm_rf(env.working_dir, secure: true)
 end

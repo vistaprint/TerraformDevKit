@@ -1,3 +1,3 @@
 module TerraformDevKit
-  VERSION = '0.2.3'.freeze
+  VERSION = '0.2.8'.freeze
 end
