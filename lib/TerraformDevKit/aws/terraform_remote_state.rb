@@ -1,7 +1,7 @@
 require 'aws-sdk-dynamodb'
 require 'aws-sdk-s3'
 
-module TerraformDevKit
+module TerraformDevKit::Aws
   # Represents a terraform lock table.
   class TerraformRemoteState
     ATTRIBUTES = [

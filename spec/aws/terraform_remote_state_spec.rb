@@ -1,6 +1,6 @@
-require 'TerraformDevKit/terraform_remote_state'
+require 'TerraformDevKit/aws/terraform_remote_state'
 
-RSpec.describe TerraformDevKit::TerraformRemoteState do
+RSpec.describe TerraformDevKit::Aws::TerraformRemoteState do
   let!(:dynamodb_double) { double() }
   let!(:s3_double) { double() }
 
@@ -9,7 +9,7 @@ RSpec.describe TerraformDevKit::TerraformRemoteState do
   let(:environment_double) { double(name: 'dev') }
 
   let(:terraform_remote_state) { 
-    TerraformDevKit::TerraformRemoteState.new(dynamodb_double, s3_double) 
+    TerraformDevKit::Aws::TerraformRemoteState.new(dynamodb_double, s3_double) 
   }
 
   let(:attributes) {

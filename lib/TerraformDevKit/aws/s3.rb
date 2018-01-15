@@ -2,8 +2,7 @@ require 'aws-sdk-s3'
 
 Aws.use_bundled_cert!
 
-module TerraformDevKit
-  # Wrapper class around aws s3
+module TerraformDevKit::Aws
   class S3
     def initialize(credentials, region)
       @s3_client = Aws::S3::Client.new(
