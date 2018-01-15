@@ -1,3 +1,4 @@
+require 'aws-sdk-core'
 require 'TerraformDevKit/aws/aws'
 
 RSpec.describe TerraformDevKit::Aws::AwsConfig do
