@@ -133,9 +133,9 @@ RSpec.describe TerraformDevKit::Aws::AwsConfig do
       .and_return(true)
     allow(shared_credentials)
       .to receive(:credentials)
-      .and_return(Aws::Credentials.new(SHARED_ACCESS_KEY, SHARED_SECRET_KEY))
+      .and_return(::Aws::Credentials.new(SHARED_ACCESS_KEY, SHARED_SECRET_KEY))
 
-    allow(Aws::SharedCredentials)
+    allow(::Aws::SharedCredentials)
       .to receive(:new).with(profile_name: PROFILE_NAME)
       .and_return(shared_credentials)
   end

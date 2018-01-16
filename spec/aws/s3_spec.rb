@@ -16,7 +16,7 @@ RSpec.describe TerraformDevKit::Aws::S3 do
   it 'should destroy all files in the bucket before destroying the bucket' do
     aws_s3_double = instance_double('Aws::S3::Client')
 
-    expect(Aws::S3::Client)
+    expect(::Aws::S3::Client)
       .to receive(:new)
       .with(
         credentials: credentials,

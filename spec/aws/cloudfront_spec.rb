@@ -24,7 +24,7 @@ RSpec.describe TerraformDevKit::Aws::CloudFront do
       it 'should return true' do
         aws_cloudfront_double = instance_double('Aws::CloudFront::Client')
       
-        expect(Aws::CloudFront::Client)
+        expect(::Aws::CloudFront::Client)
           .to receive(:new)
           .with(
             credentials: credentials,
