@@ -1,6 +1,6 @@
-require 'TerraformDevKit/s3'
+require 'TerraformDevKit/aws/s3'
 
-RSpec.describe TerraformDevKit::S3 do
+RSpec.describe TerraformDevKit::Aws::S3 do
   let(:region) { 'some-region' }
   let(:credentials) { 'some-credentials' }
   let(:bucket_name) { 'some-bucket' }
@@ -16,7 +16,7 @@ RSpec.describe TerraformDevKit::S3 do
   it 'should destroy all files in the bucket before destroying the bucket' do
     aws_s3_double = instance_double('Aws::S3::Client')
 
-    expect(Aws::S3::Client)
+    expect(::Aws::S3::Client)
       .to receive(:new)
       .with(
         credentials: credentials,
@@ -44,7 +44,7 @@ RSpec.describe TerraformDevKit::S3 do
         bucket: bucket_name
       )
 
-    s3 = TerraformDevKit::S3.new(credentials, region)
+    s3 = TerraformDevKit::Aws::S3.new(credentials, region)
     s3.delete_bucket(bucket_name)
   end
 end
