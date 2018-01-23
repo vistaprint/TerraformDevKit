@@ -40,16 +40,16 @@ def task_in_current_namespace(task_name, current_task)
 end
 
 def remote_state
-  aws_config = TDK::AwsConfig.new(TDK::Configuration.get('aws'))
-  dynamo_db = TDK::DynamoDB.new(
+  aws_config = TDK::Aws::AwsConfig.new(TDK::Configuration.get('aws'))
+  dynamo_db = TDK::Aws::DynamoDB.new(
     aws_config.credentials,
     aws_config.region
   )
-  s3 = TDK::S3.new(
+  s3 = TDK::Aws::S3.new(
     aws_config.credentials,
     aws_config.region
   )
-  TDK::TerraformRemoteState.new(dynamo_db, s3)
+  TDK::Aws::TerraformRemoteState.new(dynamo_db, s3)
 end
 
 desc 'Prepares the environment to create the infrastructure'
