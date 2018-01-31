@@ -127,7 +127,7 @@ RSpec.describe TerraformDevKit::Aws::AwsConfig do
   end
 
   def given_valid_shared_credentials
-    shared_credentials = instance_double(Aws::SharedCredentials)
+    shared_credentials = instance_double(::Aws::SharedCredentials)
     allow(shared_credentials)
       .to receive(:set?)
       .and_return(true)

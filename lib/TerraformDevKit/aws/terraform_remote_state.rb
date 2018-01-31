@@ -30,7 +30,7 @@ module TerraformDevKit
 
         begin
           @s3.create_bucket(state_bucket_name(environment, project))
-        rescue Aws::S3::Errors::BucketAlreadyOwnedByYou
+        rescue ::Aws::S3::Errors::BucketAlreadyOwnedByYou
           return
         end
 
@@ -48,7 +48,7 @@ module TerraformDevKit
       def lock_table_exists_and_is_active(table_name)
         begin
           return @dynamodb.get_table_status(table_name) == 'ACTIVE'
-        rescue Aws::DynamoDB::Errors::ResourceNotFoundException
+        rescue ::Aws::DynamoDB::Errors::ResourceNotFoundException
           return false
         end
       end

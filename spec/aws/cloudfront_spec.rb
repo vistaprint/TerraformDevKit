@@ -22,7 +22,7 @@ RSpec.describe TerraformDevKit::Aws::CloudFront do
   describe '#is_deployed?' do
     context 'cloudfront distribution is deployed' do
       it 'should return true' do
-        aws_cloudfront_double = instance_double('Aws::CloudFront::Client')
+        aws_cloudfront_double = instance_double('::Aws::CloudFront::Client')
       
         expect(::Aws::CloudFront::Client)
           .to receive(:new)
@@ -44,9 +44,9 @@ RSpec.describe TerraformDevKit::Aws::CloudFront do
 
     context 'cloudfront distribution is InProgress' do
       it 'should return false' do
-        aws_cloudfront_double = instance_double('Aws::CloudFront::Client')
+        aws_cloudfront_double = instance_double('::Aws::CloudFront::Client')
       
-        expect(Aws::CloudFront::Client)
+        expect(::Aws::CloudFront::Client)
           .to receive(:new)
           .with(
             credentials: credentials,
