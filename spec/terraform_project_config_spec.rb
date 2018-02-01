@@ -12,4 +12,10 @@ RSpec.describe TerraformDevKit::TerraformProjectConfig do
 
     expect(terraform_project_config.acronym).to eq('SPN')
   end
+
+  it 'should use project acronym if given' do
+    terraform_project_config = TerraformDevKit::TerraformProjectConfig.new('Some project Name', 'FOO')
+
+    expect(terraform_project_config.acronym).to eq('FOO')
+  end
 end

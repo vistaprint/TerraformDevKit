@@ -67,7 +67,8 @@ task :prepare, [:env] do |_, args|
   )
 
   project_config = TDK::TerraformProjectConfig.new(
-    TDK::Configuration.get('project-name')
+    TDK::Configuration.get('project-name'),
+    TDK::Configuration.get('project-acronym')
   )
   TDK::TerraformConfigManager.setup(env, project_config)
 
@@ -176,7 +177,8 @@ task :destroy, [:env] => :prepare do |task, args|
 
   unless env.local_backend?
     project_config = TDK::TerraformProjectConfig.new(
-      TDK::Configuration.get('project-name')
+      TDK::Configuration.get('project-name'),
+      TDK::Configuration.get('project-acronym')
     )
     remote_state.destroy(env, project_config)
   end
