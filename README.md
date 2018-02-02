@@ -200,7 +200,9 @@ aws:
   profile: myprofile
   region: eu-west-1
 template-dirs:
-  templates: ../templates
+  template-dest-folder: ../template-src-folder
+  template-dest-folder: ../another-template-src-folder
+  another-template-dest-folder: yet-another-template-src-folder
 ```
 
 ### Updating Modules
