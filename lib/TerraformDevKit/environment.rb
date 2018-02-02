@@ -30,6 +30,7 @@ module TerraformDevKit
     end
 
     def working_dir
+      # TODO: get rid of ROOT_PATH
       File.join(ROOT_PATH, 'envs', @name)
     end
 

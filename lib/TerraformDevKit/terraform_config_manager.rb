@@ -1,11 +1,8 @@
 require 'fileutils'
-require 'TerraformDevKit/terraform_project_config'
-require 'TerraformDevKit/terraform_template_config_file'
+require 'TerraformDevKit/terraform_template_renderer'
 
 module TerraformDevKit
   class TerraformConfigManager
-    @extra_vars_proc = proc { {} }
-
     def self.register_extra_vars_proc(p)
       @extra_vars_proc = p
     end
@@ -13,7 +10,9 @@ module TerraformDevKit
     def self.setup(env, project)
       fix_configuration(env)
       create_environment_directory(env)
-      render_template_config_files(env, project)
+      TerraformTemplateRenderer
+        .new(env, project, @extra_vars_proc)
+        .render_files
     end
 
     def self.update_modules?
@@ -39,25 +38,6 @@ module TerraformDevKit
     private_class_method
     def self.create_environment_directory(env)
       FileUtils.makedirs(env.working_dir)
-    end
-
-    private_class_method
-    def self.render_template_config_files(env, project)
-      aws_config = Configuration.get('aws')
-      file_list = Dir['*.tf.mustache'] + Dir['*.tfvars.mustache']
-      file_list.each do |fname|
-        template_file = TerraformTemplateConfigFile.new(
-          File.read(fname),
-          project,
-          env,
-          aws_config,
-          extra_vars: @extra_vars_proc.call(env)
-        )
-        config_fname = File.basename(fname, File.extname(fname))
-        Dir.chdir(env.working_dir) do
-          File.open(config_fname, 'w') { |f| f.write(template_file.render) }
-        end
-      end
     end
 
     private_class_method
