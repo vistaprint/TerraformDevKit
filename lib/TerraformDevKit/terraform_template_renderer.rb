@@ -3,10 +3,10 @@ require 'TerraformDevKit/terraform_template_config_file'
 
 module TerraformDevKit
   class TerraformTemplateRenderer
-    def initialize(env, project, extra_vars_proc)
+    def initialize(env, project, extra_vars_proc = nil)
       @env = env
       @project = project
-      @extra_vars_proc = extra_vars_proc
+      @extra_vars_proc = extra_vars_proc || proc { {} }
     end
 
     def render_files

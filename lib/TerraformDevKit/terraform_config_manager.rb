@@ -3,8 +3,6 @@ require 'TerraformDevKit/terraform_template_renderer'
 
 module TerraformDevKit
   class TerraformConfigManager
-    @extra_vars_proc = proc { {} }
-
     def self.register_extra_vars_proc(p)
       @extra_vars_proc = p
     end

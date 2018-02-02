@@ -185,6 +185,24 @@ TDK::TerraformConfigManager.register_extra_vars_proc(
 )
 ```
 
+### Additional Template Sources
+
+TerraformDevKit looks for mustache templates in the root directory, and creates final versions of these files after injecting values such as the environment name or the project name.
+
+In addition to doing this for the infrastructure description files (`.tf` files), TerraformDevKit allows users to specify additional template sources. This feature could be used, for instance, to version other types of files whose content depends on values such as the environment name.
+
+The following example shows how to instruct TerraformDevKit to read templates from folder `../templates`, and write the resulting files into a folder called `templates` that is located within environment folder (`envs/<env-name>/`):
+
+```yaml
+terraform-version: 0.11.0
+project-name: my super cool project
+aws:
+  profile: myprofile
+  region: eu-west-1
+template-dirs:
+  templates: ../templates
+```
+
 ### Updating Modules
 
 Terraform will get the necessary modules every time a new environment is created. Once the modules are cached, there is generally no need to keep updating the modules each time Terraform is executed. When using a module repository it is possible to select a specific version to use (as shown [here](https://www.terraform.io/docs/modules/sources.html#ref)). In such a case, Terraform will automatically update the modules whenever the version number is changed.
