@@ -191,7 +191,7 @@ TerraformDevKit looks for mustache templates in the root directory, and creates 
 
 In addition to doing this for the infrastructure description files (`.tf` files), TerraformDevKit allows users to specify additional template sources. This feature could be used, for instance, to version other types of files whose content depends on values such as the environment name.
 
-The following example shows how to instruct TerraformDevKit to read templates from folder `../templates`, and write the resulting files into a folder called `templates` that is located within environment folder (`envs/<env-name>/`):
+The following example shows how to instruct TerraformDevKit to read templates from different source folders, and write the resulting files into their corresponding destination folders located within an environment folder (e.g., `envs/<env-name>/`):
 
 ```yaml
 terraform-version: 0.11.0
