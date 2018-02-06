@@ -1,26 +1,31 @@
 require 'open3'
 
+require 'TerraformDevKit/errors/command_error'
+
 module TerraformDevKit
   class Command
     def self.run(cmd, directory: Dir.pwd, print_output: true)
-      Open3.popen2e(cmd, chdir: directory) do |_, stdout_and_stderr, thread|
-        output = process_output(stdout_and_stderr, print_output)
-
-        thread.join
-        raise "Error running command #{cmd}" unless thread.value.success?
-        return output
+      out = IO.popen(cmd, err: %i[child out], chdir: directory) do |io|
+        begin
+          out = ''
+          loop do
+            chunk = io.readpartial(4096)
+            print chunk if print_output
+            out += chunk
+          end
+        rescue EOFError; end
+        out
       end
+
+      out = process_output(out)
+      $?.exitstatus.zero? || (raise CommandError.new(cmd, out))
+      out
     end
 
     private_class_method
-    def self.process_output(stream, print_output)
-      lines = []
-
-      until (line = stream.gets).nil?
-        print line if print_output
-        lines << line.strip
-      end
-      lines
+    def self.process_output(out)
+      out.split("\n")
+        .map { |line| line.tr("\r\n", '') }
     end
   end
 end
