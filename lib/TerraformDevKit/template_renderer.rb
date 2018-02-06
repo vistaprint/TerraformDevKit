@@ -1,8 +1,8 @@
 require 'fileutils'
-require 'TerraformDevKit/terraform_template_config_file'
+require 'TerraformDevKit/template_config_file'
 
 module TerraformDevKit
-  class TerraformTemplateRenderer
+  class TemplateRenderer
     def initialize(env, project, extra_vars_proc = nil)
       @env = env
       @project = project
@@ -22,7 +22,7 @@ module TerraformDevKit
     def render_files_into_path(file_list, dest_path = '.')
       aws_config = Configuration.get('aws')
       file_list.each do |fname|
-        template_file = TerraformTemplateConfigFile.new(
+        template_file = TemplateConfigFile.new(
           File.read(fname),
           @project,
           @env,

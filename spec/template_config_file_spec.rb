@@ -1,9 +1,9 @@
 require 'TerraformDevKit/environment'
-require 'TerraformDevKit/terraform_template_config_file'
+require 'TerraformDevKit/template_config_file'
 
 TDK = TerraformDevKit
 
-RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
+RSpec.describe TerraformDevKit::TemplateConfigFile do
   context 'with local backend' do
     let(:env_name) { 'dummyenv' }
     let(:env) { TDK::Environment.new(env_name) }
@@ -14,7 +14,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
 
       it 'raises an error' do
         expect {
-          TDK::TerraformTemplateConfigFile.new(
+          TDK::TemplateConfigFile.new(
             '', project, env, aws_config
           ).render
         }.to raise_error(KeyError)
@@ -43,7 +43,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
       end
 
       it 'renders an empty default profile' do
-        output = TDK::TerraformTemplateConfigFile.new(
+        output = TDK::TemplateConfigFile.new(
           input, project, env, aws_config
         ).render
         expect(output).to eq(expected_output)
@@ -77,7 +77,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
       end
 
       it 'renders the profile' do
-        output = TDK::TerraformTemplateConfigFile.new(
+        output = TDK::TemplateConfigFile.new(
           input, project, env, aws_config
         ).render
         expect(output).to eq(expected_output)
@@ -131,7 +131,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
       end
 
       it 'renders the template with all the values' do
-        output = TDK::TerraformTemplateConfigFile.new(
+        output = TDK::TemplateConfigFile.new(
           input, project, env, aws_config
         ).render
         expect(output).to eq(expected_output)
@@ -200,7 +200,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
     end
 
     it 'renders the template with all the values' do
-      output = TDK::TerraformTemplateConfigFile.new(
+      output = TDK::TemplateConfigFile.new(
         input, project, env, aws_config
       ).render
       expect(output).to eq(expected_output)
@@ -236,7 +236,7 @@ RSpec.describe TerraformDevKit::TerraformTemplateConfigFile do
     end
 
     it 'renders the extra values' do
-      output = TDK::TerraformTemplateConfigFile.new(
+      output = TDK::TemplateConfigFile.new(
         input, project, env, aws_config, extra_vars: { DummyVar: 'FooBar' }
       ).render
       expect(output).to eq(expected_output)

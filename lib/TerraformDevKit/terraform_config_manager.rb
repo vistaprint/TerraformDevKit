@@ -1,5 +1,5 @@
 require 'fileutils'
-require 'TerraformDevKit/terraform_template_renderer'
+require 'TerraformDevKit/template_renderer'
 
 module TerraformDevKit
   class TerraformConfigManager
@@ -10,7 +10,7 @@ module TerraformDevKit
     def self.setup(env, project)
       fix_configuration(env)
       create_environment_directory(env)
-      TerraformTemplateRenderer
+      TemplateRenderer
         .new(env, project, @extra_vars_proc)
         .render_files
     end
