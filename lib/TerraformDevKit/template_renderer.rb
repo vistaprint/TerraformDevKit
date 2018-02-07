@@ -10,8 +10,8 @@ module TerraformDevKit
     end
 
     def render_files
-      template_dirs = Configuration.get('template-dirs')
       render_files_into_path(Dir['*.mustache'])
+      template_dirs = Configuration.get('template-dirs')
       template_dirs.to_h.each do |dest, src|
         render_files_into_path(Dir[File.join(src, '*.mustache')], dest)
       end

@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'TerraformDevKit/extended_file_utils'
 require 'TerraformDevKit/template_renderer'
 
 module TerraformDevKit
@@ -10,6 +11,7 @@ module TerraformDevKit
     def self.setup(env, project)
       fix_configuration(env)
       create_environment_directory(env)
+      copy_files(env)
       TemplateRenderer
         .new(env, project, @extra_vars_proc)
         .render_files
@@ -38,6 +40,11 @@ module TerraformDevKit
     private_class_method
     def self.create_environment_directory(env)
       FileUtils.makedirs(env.working_dir)
+    end
+
+    private_class_method
+    def self.copy_files(env)
+      ExtendedFileUtils.copy(Configuration.get('copy-files'), env.working_dir)
     end
 
     private_class_method
