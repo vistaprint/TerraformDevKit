@@ -2,11 +2,11 @@ require 'tmpdir'
 
 require 'TerraformDevKit/config'
 require 'TerraformDevKit/environment'
-require 'TerraformDevKit/terraform_template_renderer'
+require 'TerraformDevKit/template_renderer'
 
 TDK = TerraformDevKit
 
-RSpec.describe TDK::TerraformTemplateRenderer do
+RSpec.describe TDK::TemplateRenderer do
   before(:example) do
     @initial_dir = Dir.pwd
     @tmpdir = Dir.mktmpdir
@@ -66,7 +66,7 @@ RSpec.describe TDK::TerraformTemplateRenderer do
 
         FileUtils.makedirs(env.working_dir)
 
-        TDK::TerraformTemplateRenderer
+        TDK::TemplateRenderer
           .new(env, project)
           .render_files
 
@@ -137,7 +137,7 @@ RSpec.describe TDK::TerraformTemplateRenderer do
 
         FileUtils.makedirs(env.working_dir)
 
-        TDK::TerraformTemplateRenderer
+        TDK::TemplateRenderer
           .new(env, project)
           .render_files
 
@@ -191,7 +191,7 @@ RSpec.describe TDK::TerraformTemplateRenderer do
 
         FileUtils.makedirs(env.working_dir)
 
-        TDK::TerraformTemplateRenderer
+        TDK::TemplateRenderer
           .new(env, project, proc { { Dummy: 'foobar' } })
           .render_files
 

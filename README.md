@@ -205,6 +205,19 @@ template-dirs:
   another-template-dest-folder: yet-another-template-src-folder
 ```
 
+### Copying Files to the Environment Folder
+
+Sometimes it may be desirable to copy files that exist in a given folder into the environment folder. The `copy-files` field makes this possible. See the following configuration for an example:
+
+```yaml
+terraform-version: 0.11.0
+project-name: my super cool project
+copy-files:
+  dest-folder: ../src-folder
+  another-dest-folder: ../../another-src-folder
+  dest-file: src-file
+```
+
 ### Updating Modules
 
 Terraform will get the necessary modules every time a new environment is created. Once the modules are cached, there is generally no need to keep updating the modules each time Terraform is executed. When using a module repository it is possible to select a specific version to use (as shown [here](https://www.terraform.io/docs/modules/sources.html#ref)). In such a case, Terraform will automatically update the modules whenever the version number is changed.

@@ -1,5 +1,5 @@
 module TerraformDevKit
-  class TerraformProjectConfig
+  class ProjectConfig
     attr_reader :name, :acronym
 
     def initialize(project_name, project_acronym = nil)

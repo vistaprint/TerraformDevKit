@@ -66,7 +66,7 @@ task :prepare, [:env] do |_, args|
     directory: BIN_PATH
   )
 
-  project_config = TDK::TerraformProjectConfig.new(
+  project_config = TDK::ProjectConfig.new(
     TDK::Configuration.get('project-name'),
     TDK::Configuration.get('project-acronym')
   )
@@ -176,7 +176,7 @@ task :destroy, [:env] => :prepare do |task, args|
   invoke('pre_destroy', task, args.env, safe_invoke: true)
 
   unless env.local_backend?
-    project_config = TDK::TerraformProjectConfig.new(
+    project_config = TDK::ProjectConfig.new(
       TDK::Configuration.get('project-name'),
       TDK::Configuration.get('project-acronym')
     )

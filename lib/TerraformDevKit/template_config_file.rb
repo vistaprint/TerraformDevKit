@@ -1,7 +1,7 @@
 require 'mustache'
 
 module TerraformDevKit
-  class TerraformTemplateConfigFile
+  class TemplateConfigFile
     def initialize(content, project, env, aws_config, extra_vars: {})
       @content = content
       @project = project
