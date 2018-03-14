@@ -119,7 +119,7 @@ Additionally, TerraformDevKit allows users to define a set of hooks that will be
 * `post_apply`: invoked after `apply` task runs
 * `pre_destroy`: invoked before `destroy` task runs
 * `post_destroy`: invoked after `destroy` task runs
-* `custom_prepare`: invoked during the preparation process, before terraform is initialized
+* `custom_prepare`: invoked during the preparation process, before terraform is initialized and the environment folder is created
 * `custom_test`: invoked during as part of the `test` task, right after `apply` completes.
 
 ### Sample Terraform Templates

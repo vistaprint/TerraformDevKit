@@ -32,11 +32,7 @@ end
 
 def task_in_current_namespace(task_name, current_task)
   namespace = current_task.scope.path.to_s
-  if namespace.empty?
-    return task_name
-  end
-
-  return "#{namespace}:#{task_name}"
+  namespace.empty? ? task_name : "#{namespace}:#{task_name}"
 end
 
 def remote_state
@@ -54,12 +50,15 @@ end
 
 desc 'Prepares the environment to create the infrastructure'
 task :prepare, [:env] do |_, args|
-  puts "== Configuring environment #{args.env}"
   env = TDK::Environment.new(args.env)
+
+  puts "== Configuring environment #{env.name}"
 
   config_file = CONFIG_FILE % env.config
   puts "== Loading configuration from #{config_file}"
   TDK::Configuration.init(config_file)
+
+  invoke('custom_prepare', task, env.name, safe_invoke: true)
 
   TDK::TerraformInstaller.install_local(
     TDK::Configuration.get('terraform-version'),
@@ -77,8 +76,6 @@ task :prepare, [:env] do |_, args|
     remote_state.init(env, project_config)
   end
 
-  invoke('custom_prepare', task, args.env, safe_invoke: true)
-
   if File.exist?(File.join(env.working_dir, '.terraform'))
     get_cmd  = 'terraform get'
     get_cmd += ' -update=true' if TDK::TerraformConfigManager.update_modules?
@@ -86,7 +83,6 @@ task :prepare, [:env] do |_, args|
   else
     init_cmd  = 'terraform init'
     init_cmd += ' -upgrade=false' unless TDK::TerraformConfigManager.update_modules?
-
     TDK::Command.run(init_cmd, directory: env.working_dir)
   end
 end
@@ -94,15 +90,12 @@ end
 desc 'Shows the plan to create the infrastructure'
 task :plan, [:env] => :prepare do |_, args|
   env = TDK::Environment.new(args.env)
-  Dir.chdir(env.working_dir) do
-    system("terraform plan -out=#{PLAN_FILE}")
-  end
+  cmd = "terraform plan -out=#{PLAN_FILE}"
+  TDK::Command.run(cmd, directory: env.working_dir)
 end
 
 desc 'Creates the infrastructure'
 task :apply, [:env] => :prepare do |task, args|
-  invoke('pre_apply', task, args.env, safe_invoke: true)
-
   env = TDK::Environment.new(args.env)
 
   invoke('plan', task, env.name)
@@ -117,13 +110,14 @@ task :apply, [:env] => :prepare do |task, args|
     end
   end
 
+  invoke('pre_apply', task, env.name, safe_invoke: true)
+
   destroy_if_fails(env, task) do
-    Dir.chdir(env.working_dir) do
-      system("terraform apply \"#{PLAN_FILE}\"")
-    end
+    cmd = "terraform apply \"#{PLAN_FILE}\""
+    TDK::Command.run(cmd, directory: env.working_dir)
   end
 
-  invoke('post_apply', task, args.env, safe_invoke: true)
+  invoke('post_apply', task, env.name, safe_invoke: true)
 end
 
 desc 'Tests a local environment'
@@ -134,7 +128,7 @@ task :test, [:env] do |task, args|
   invoke('apply', task, env.name)
 
   destroy_if_fails(env, task) do
-    invoke('custom_test', task, args.env, safe_invoke: true)
+    invoke('custom_test', task, env.name, safe_invoke: true)
   end
 end
 
@@ -150,10 +144,7 @@ end
 
 desc 'Destroys the infrastructure'
 task :destroy, [:env] => :prepare do |task, args|
-  invoke('pre_destroy', task, args.env, safe_invoke: true)
-
   env = TDK::Environment.new(args.env)
-  cmd = 'terraform destroy'
 
   unless env.local_backend?
     puts Rainbow("\n\n!!!! WARNING !!!!\n\n" \
@@ -167,13 +158,10 @@ task :destroy, [:env] => :prepare do |task, args|
            "Response was: #{response}"
     end
   end
-  
-  cmd += ' -force'
 
-  Dir.chdir(env.working_dir) do
-    system(cmd)
-  end
-  invoke('pre_destroy', task, args.env, safe_invoke: true)
+  invoke('pre_destroy', task, env.name, safe_invoke: true)
+
+  TDK::Command.run('terraform destroy -force', directory: env.working_dir)
 
   unless env.local_backend?
     project_config = TDK::ProjectConfig.new(
@@ -183,7 +171,7 @@ task :destroy, [:env] => :prepare do |task, args|
     remote_state.destroy(env, project_config)
   end
 
-  invoke('post_destroy', task, args.env, safe_invoke: true)
+  invoke('post_destroy', task, env.name, safe_invoke: true)
 end
 
 desc 'Cleans an environment (infrastructure is destroyed too)'
