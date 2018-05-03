@@ -24,7 +24,7 @@ module TerraformDevKit
 
     private_class_method
     def self.fix_configuration(env)
-      raise 'No AWS section in the config file' if Configuration.get('aws').nil?
+      !Configuration.get('aws').nil? || (raise 'No AWS section in the config file')
       if Environment.running_on_jenkins?
         Configuration.get('aws').delete('profile')
       elsif Configuration.get('aws').key?('profile')

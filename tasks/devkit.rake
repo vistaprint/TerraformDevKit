@@ -100,7 +100,7 @@ task :apply, [:env] => :prepare do |task, args|
 
   invoke('plan', task, env.name)
 
-  unless env.local_backend?
+  unless env.local_backend? || allow_remote_apply?
     puts Rainbow("Are you sure you want to apply the above plan?\n" \
                  "Only 'yes' will be accepted.").green
     response = STDIN.gets.strip
@@ -118,6 +118,11 @@ task :apply, [:env] => :prepare do |task, args|
   end
 
   invoke('post_apply', task, env.name, safe_invoke: true)
+end
+
+def allow_remote_apply?
+  aws = TDK::Configuration.get('aws')
+  aws.key?('remote_apply') && aws['remote_apply']
 end
 
 desc 'Tests a local environment'
