@@ -53,7 +53,7 @@ module TerraformDevKit
         zip_file.each do |entry|
           puts "Extracting #{entry.name}"
           entry.restore_permissions = true
-          entry.extract { true }
+          entry.extract(entry.name) { true }
         end
       end
     end
