@@ -24,12 +24,12 @@ RSpec.describe TDK::TerraformInstaller do
       before(:example) do
         allow(TDK::Command)
           .to receive(:run)
-          .and_return(['Terraform v0.11.1'])
+          .and_return(['Terraform v0.12.24'])
       end
 
       it 'returns the version' do
         version = TDK::TerraformInstaller.installed_terraform_version
-        expect(version).to eq('0.11.1')
+        expect(version).to eq('0.12.24')
       end
     end
   end
@@ -90,7 +90,7 @@ RSpec.describe TDK::TerraformInstaller do
     it 'returns nil' do
       Dir.chdir(@tmpdir) do
         TDK::TerraformInstaller.install_local(
-          '0.11.1',
+          '0.12.24',
           directory: 'bin'
         )
 
@@ -100,7 +100,7 @@ RSpec.describe TDK::TerraformInstaller do
 
         output = TDK::Command.run('./bin/terraform --version')
         version = TDK::TerraformInstaller.extract_version(output)
-        expect(version).to eq('0.11.1')
+        expect(version).to eq('0.12.24')
       end
     end
   end
