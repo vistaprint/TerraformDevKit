@@ -8,8 +8,10 @@ environment:
 
 install:
   - set PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%
-  - bundle install
-
+  - gem update --no-document --system
+  - gem install bundler --no-document
+  - bundle install --jobs 3 --retry 3
+  
 build: off
 
 before_test:
