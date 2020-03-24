@@ -69,7 +69,7 @@ The first one contains the configuration for **all** the development environment
 A sample configuration files is shown next:
 
 ```yaml
-terraform-version: 0.11.0
+terraform-version: 0.12.24
 project-name: my super cool project
 aws:
   profile: myprofile
@@ -194,7 +194,7 @@ In addition to doing this for the infrastructure description files (`.tf` files)
 The following example shows how to instruct TerraformDevKit to read templates from different source folders, and write the resulting files into their corresponding destination folders located within an environment folder (e.g., `envs/<env-name>/`):
 
 ```yaml
-terraform-version: 0.11.0
+terraform-version: 0.12.24
 project-name: my super cool project
 aws:
   profile: myprofile
@@ -210,7 +210,7 @@ template-dirs:
 Sometimes it may be desirable to copy files that exist in a given folder into the environment folder. The `copy-files` field makes this possible. See the following configuration for an example:
 
 ```yaml
-terraform-version: 0.11.0
+terraform-version: 0.12.24
 project-name: my super cool project
 copy-files:
   dest-folder: ../src-folder

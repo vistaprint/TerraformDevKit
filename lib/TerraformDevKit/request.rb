@@ -18,7 +18,7 @@ module TerraformDevKit
         ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE
       }
       options.merge!(@headers)
-      open(url, options)
+      URI.open(url, options)
     rescue OpenURI::HTTPError => error
       response = error.io
       raise if raise_on_codes.include?(response.status[0])

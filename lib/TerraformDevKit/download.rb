@@ -10,7 +10,7 @@ module TerraformDevKit
       puts "Downloading #{url} to #{filename}..."
 
       open(filename, 'wb') do |file|
-        file << open(url, ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE).read
+        file << URI.open(url, ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE).read
       end
     end
   end
